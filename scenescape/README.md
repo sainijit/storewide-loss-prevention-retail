@@ -28,7 +28,7 @@ Each application passes its own `APP_DIR` so that `init.sh` reads the correct `c
 
 3. **`scripts/download_models.sh`** downloads OpenVINO models (person-detection, person-reidentification) from the Open Model Zoo into a Docker volume. Models that already exist are skipped.
 
-4. **`docker-compose.yaml`** starts the full SceneScape stack (webserver, controller, DLStreamer pipeline server, MQTT broker, database, media server) using pre-built images.
+4. **`docker-compose.yaml`** starts the full SceneScape stack (controller, DLStreamer pipeline server, MQTT broker, database, media server) using pre-built images.
 
 5. The DLStreamer pipeline server runs person detection and re-identification inference on RTSP camera streams, publishing tracking data via MQTT for consuming applications.
 
