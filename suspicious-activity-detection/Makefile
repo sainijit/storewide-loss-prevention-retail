@@ -12,6 +12,12 @@ COMPOSE_SCENESCAPE := docker compose --project-directory . --env-file docker/.en
 COMPOSE_LP := docker compose --project-directory . --env-file docker/.env -f docker/docker-compose.yaml
 COMPOSE_ALL := docker compose --project-directory . --env-file docker/.env -f $(SCENESCAPE_DIR)/docker-compose.yaml -f docker/docker-compose.yaml
 
+# ---- Initialization ----
+
+.PHONY: init
+init:
+	@$(MAKE) -C $(SCENESCAPE_DIR) APP_DIR=$(CURDIR) init
+
 # ---- Full Stack (SceneScape + LP) ----
 
 .PHONY: demo

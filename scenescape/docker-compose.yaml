@@ -28,6 +28,10 @@ secrets:
     file: ${SECRETSDIR}/certs/scenescape-vdms-c.crt
   vdms-client-key:
     file: ${SECRETSDIR}/certs/scenescape-vdms-c.key
+  vdms-server-cert:
+    file: ${SECRETSDIR}/certs/scenescape-vdms-s.crt
+  vdms-server-key:
+    file: ${SECRETSDIR}/certs/scenescape-vdms-s.key
   controller.auth:
     environment: CONTROLLER_AUTH
   browser.auth:
@@ -221,9 +225,33 @@ services:
     restart: always
     pids_limit: 1000
 
+  # ---- VDMS (Visual Data Management System for ReID) ----
+  vdms:
+    image: intellabs/vdms:v2.12.0
+    init: true
+    networks:
+      storewide-lp:
+        aliases:
+          - vdms.scenescape.intel.com
+    environment:
+      - OVERRIDE_ca_file=/run/secrets/certs/scenescape-ca.pem
+      - OVERRIDE_cert_file=/run/secrets/certs/scenescape-vdms-s.crt
+      - OVERRIDE_key_file=/run/secrets/certs/scenescape-vdms-s.key
+    secrets:
+      - source: root-cert
+        target: certs/scenescape-ca.pem
+      - source: vdms-server-cert
+        target: certs/scenescape-vdms-s.crt
+      - source: vdms-server-key
+        target: certs/scenescape-vdms-s.key
+    restart: always
+    pids_limit: 1000
+
   # ---- RTSP Media Server ----
   mediaserver:
     image: bluenviron/mediamtx:1.14.0
+    ports:
+      - "8554:8554"
     networks:
       storewide-lp:
         aliases:
@@ -235,9 +263,9 @@ services:
   lp-cams:
     image: linuxserver/ffmpeg:version-8.0-cli
     command: >
-      -nostdin -re -stream_loop -1 -i /workspace/media/${VIDEO_FILE:-lp-camera1.mp4}
-      -c:v libx264 -preset ultrafast -tune zerolatency
-      -f rtsp -rtsp_transport tcp rtsp://mediaserver:8554/retail-cam1
+      -nostdin -re -stream_loop -1 -i /workspace/media/${VIDEO_FILE:-lp-camera1-720p.mp4}
+      -c:v copy -an
+      -f rtsp -rtsp_transport tcp rtsp://mediaserver:8554/${CAMERA_NAME:-lp-camera1-720p}
     volumes:
       - vol-sample-data:/workspace/media
     networks:
