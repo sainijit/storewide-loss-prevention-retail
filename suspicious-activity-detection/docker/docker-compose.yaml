@@ -5,7 +5,7 @@ services:
   # ---------- Gradio UI Service ----------
   gradio-ui:
     build:
-      context: ../ui
+      context: ui
       dockerfile: Dockerfile
     image: gradio-ui:latest
     ports:
@@ -25,7 +25,7 @@ services:
       - HTTPS_PROXY=
     restart: unless-stopped
     volumes:
-      - ../configs/zone_config.json:/app/zone_config.json:ro
+      - ./configs/zone_config.json:/app/zone_config.json:ro
 
   # ---------- SeaweedFS (S3-compatible Object Storage) ----------
   seaweedfs:
@@ -46,7 +46,7 @@ services:
     command: "server -s3 -s3.config=/etc/seaweedfs/s3-config.json -dir=/data"
     volumes:
       - seaweedfs-data:/data
-      - ../configs/s3-config.json:/etc/seaweedfs/s3-config.json:ro
+      - ./configs/s3-config.json:/etc/seaweedfs/s3-config.json:ro
     healthcheck:
       test: ["CMD", "nc", "-z", "127.0.0.1", "9333"]
       interval: 10s
@@ -57,7 +57,7 @@ services:
   # ---------- Store-wide Loss Prevention ----------
   storewide-loss-prevention:
     build:
-      context: ${APP_DIR:-..}/src
+      context: src
       dockerfile: Dockerfile
     image: ${REGISTRY:-}storewide-loss-prevention:${TAG:-latest}
     ports:
@@ -95,7 +95,7 @@ services:
       BEHAVIORAL_ANALYSIS_URL: ${BEHAVIORAL_ANALYSIS_URL:-http://behavioral-analysis-service:8090}
       RULE_SERVICE_URL: ${RULE_SERVICE_URL:-http://rule-service:8091}
     volumes:
-      - ../configs:/app/configs:ro
+      - ./configs:/app/configs:ro
       - ../scenescape/secrets:/app/secrets:ro
     restart: unless-stopped
 

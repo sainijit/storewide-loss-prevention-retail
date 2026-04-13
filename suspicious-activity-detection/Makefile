@@ -8,9 +8,9 @@
 # SceneScape-specific targets are in scenescape/Makefile.
 
 SCENESCAPE_DIR := ../scenescape
-COMPOSE_SCENESCAPE := docker compose --env-file docker/.env -f $(SCENESCAPE_DIR)/docker-compose.yaml
-COMPOSE_LP := docker compose --env-file docker/.env -f docker/docker-compose.yaml
-COMPOSE_ALL := docker compose --env-file docker/.env -f $(SCENESCAPE_DIR)/docker-compose.yaml -f docker/docker-compose.yaml
+COMPOSE_SCENESCAPE := docker compose --project-directory . --env-file docker/.env -f $(SCENESCAPE_DIR)/docker-compose.yaml
+COMPOSE_LP := docker compose --project-directory . --env-file docker/.env -f docker/docker-compose.yaml
+COMPOSE_ALL := docker compose --project-directory . --env-file docker/.env -f $(SCENESCAPE_DIR)/docker-compose.yaml -f docker/docker-compose.yaml
 
 # ---- Full Stack (SceneScape + LP) ----
 
