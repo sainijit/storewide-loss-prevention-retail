@@ -42,8 +42,7 @@ scenescape/
 ├── scripts/
 │   ├── init.sh                     # Generate secrets, DLStreamer config, .env
 │   ├── install.sh                  # First-time install helper
-│   ├── download_models.sh          # Download OpenVINO models into Docker volume
-│   └── setup.sh                    # Legacy setup, run, stop, clean commands
+│   ├── download_models.sh          # Download OpenVINO models into Docker volume│   
 ├── controller/
 │   ├── reid-config.json            # Re-identification tracker config
 │   └── tracker-config.json         # Object tracker config
