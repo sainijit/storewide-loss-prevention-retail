@@ -1,0 +1,110 @@
+"""Alert Service — Observer-based alert dispatch using strategies."""
+
+from __future__ import annotations
+
+import logging
+import uuid
+from datetime import datetime
+from typing import Optional
+
+from backend.domain.entities.match_result import AlertPayload, MatchResult
+from backend.domain.interfaces.alert import AlertStrategy
+from backend.domain.interfaces.repository import EventRepository, POIRepository
+from backend.observer.events import EventBus, MatchFoundEvent
+
+log = logging.getLogger("poi.service.alert")
+
+
+class AlertService:
+    """Manages alert generation and dispatch via configured strategies.
+
+    Subscribes to MatchFoundEvent via the EventBus (Observer Pattern)
+    and dispatches through all registered AlertStrategy instances.
+    """
+
+    def __init__(
+        self,
+        strategies: list[AlertStrategy],
+        event_repo: EventRepository,
+        poi_repo: POIRepository,
+        event_bus: EventBus,
+    ) -> None:
+        self._strategies = strategies
+        self._event_repo = event_repo
+        self._poi_repo = poi_repo
+        self._event_bus = event_bus
+
+        # Register as observer
+        self._event_bus.subscribe("match_found", self._on_match_found)
+
+    def _on_match_found(self, event: MatchFoundEvent) -> None:
+        """Observer callback when a POI match is found."""
+        # Idempotent: check if alert already sent for this object
+        if self._event_repo.is_alert_sent(event.object_id):
+            log.debug("Alert already sent for object=%s, skipping", event.object_id)
+            return
+
+        # Dispatch to all strategies
+        for strategy in self._strategies:
+            try:
+                strategy.send(event.alert)
+                log.info("Alert dispatched via %s: %s", strategy.name(), event.alert.alert_id)
+            except Exception:
+                log.exception("Failed to dispatch alert via %s", strategy.name())
+
+        # Store alert and mark as sent
+        self._event_repo.store_alert(event.alert.to_dict())
+        self._event_repo.mark_alert_sent(event.object_id)
+
+    def create_alert_payload(
+        self,
+        match: MatchResult,
+        object_id: str,
+        timestamp: str,
+        camera_id: str,
+        region_name: str,
+        confidence: float,
+        center_of_mass: Optional[dict] = None,
+    ) -> AlertPayload:
+        """Build an AlertPayload from a match result."""
+        poi = self._poi_repo.get(match.poi_id)
+        severity = poi.severity.value if poi else "medium"
+        notes = poi.notes if poi else ""
+        enrollment_date = poi.created_at if poi else ""
+
+        # Count previous matches
+        prev_alerts = self._event_repo.get_events_for_poi(match.poi_id)
+        total_previous = len(prev_alerts)
+
+        bbox = [0, 0, 0, 0]
+        if center_of_mass:
+            x = int(center_of_mass.get("x", 0))
+            y = int(center_of_mass.get("y", 0))
+            w = int(center_of_mass.get("width", 0))
+            h = int(center_of_mass.get("height", 0))
+            bbox = [x - w // 2, y - h // 2, x + w // 2, y + h // 2]
+
+        alert_id = f"alert-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}-{match.poi_id}"
+
+        return AlertPayload(
+            alert_id=alert_id,
+            poi_id=match.poi_id,
+            severity=severity,
+            timestamp=timestamp,
+            match={
+                "camera_id": camera_id,
+                "confidence": confidence,
+                "similarity_score": match.similarity_score,
+                "bbox": bbox,
+                "frame_number": 0,
+                "thumbnail_path": "",
+            },
+            poi_metadata={
+                "notes": notes,
+                "enrollment_date": enrollment_date,
+                "total_previous_matches": total_previous,
+            },
+        )
+
+    def get_recent_alerts(self, limit: int = 50) -> list[dict]:
+        return self._event_repo.get_recent_alerts(limit)

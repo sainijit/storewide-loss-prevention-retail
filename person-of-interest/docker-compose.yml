@@ -1,0 +1,78 @@
+services:
+  # ── POI Backend ────────────────────────────────────────
+  poi-backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: poi-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=redis
+      - PYTHONPATH=/app
+    volumes:
+      - faiss-data:/data/faiss
+      - upload-data:/data/uploads
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - poi-net
+
+  # ── UI ─────────────────────────────────────────────────
+  ui:
+    build:
+      context: .
+      dockerfile: ui/Dockerfile
+    container_name: poi-ui
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - poi-backend
+    networks:
+      - poi-net
+
+  # ── Redis ──────────────────────────────────────────────
+  redis:
+    image: redis:8.6.2
+    container_name: poi-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - poi-net
+
+  # ── Alert Service ──────────────────────────────────────
+  alert-service:
+    image: intel/alert-service:0.0.1
+    container_name: poi-alert-service
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    env_file:
+      - .env
+    environment:
+      - MQTT_HOST=${MQTT_HOST:-localhost}
+      - MQTT_PORT=${MQTT_PORT:-1883}
+    networks:
+      - poi-net
+
+volumes:
+  redis-data:
+  faiss-data:
+  upload-data:
+
+networks:
+  poi-net:
+    driver: bridge
