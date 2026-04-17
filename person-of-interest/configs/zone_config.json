@@ -1,9 +1,11 @@
 {
   "_comment": "scene_name and scene_zip support comma-separated values for multiple scenes",
-  "scene_name": "storewide loss prevention",
-  "camera_name": "lp-camera1",
-  "scene_zip": "storewide-loss-prevention.zip",
-  "video_file": "lp-camera1.mp4",
+  "scene_name": "conference room",
+  "camera_name": "Camera_01",
+  "camera_name_2": "Camera_02",
+  "scene_zip": "",
+  "video_file": "Camera_01.mp4",
+  "video_file_2": "Camera_02.mp4",
   "scenescape_api": {
     "base_url": "https://web.scenescape.intel.com",
     "auth_path": "/api/v1/auth",
@@ -12,7 +14,10 @@
     "verify_ssl": false
   },
   "zones": {
-    "aisle1": "HIGH_VALUE",
-    "aisle2": "CHECKOUT"
+    "_comment": "Map zone names (as created in SceneScape UI) to zone types",
+    "entry": "ENTRY",
+    "exit": "EXIT",
+    "high_value": "HIGH_VALUE",
+    "checkout": "CHECKOUT"
   }
 }
