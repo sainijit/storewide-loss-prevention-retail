@@ -22,7 +22,7 @@ RUN echo 'server { \
     location /api/ { proxy_pass http://poi-backend:8000; } \
     location /uploads/ { proxy_pass http://poi-backend:8000/uploads/; proxy_set_header Host $host; } \
     location /ws/ { proxy_pass http://poi-backend:8000; proxy_http_version 1.1; proxy_set_header Upgrade $http_upgrade; proxy_set_header Connection "upgrade"; } \
-    location /alerts/ws { proxy_pass http://poi-backend:8000/ws/alerts; proxy_http_version 1.1; proxy_set_header Upgrade $http_upgrade; proxy_set_header Connection "upgrade"; proxy_read_timeout 3600s; } \
+    location /alerts/ws { proxy_pass http://poi-alert-service:8000/api/v1/ws; proxy_http_version 1.1; proxy_set_header Upgrade $http_upgrade; proxy_set_header Connection "upgrade"; proxy_read_timeout 3600s; } \
 }' > /etc/nginx/conf.d/default.conf
 
 EXPOSE 80

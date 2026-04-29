@@ -46,17 +46,21 @@ class AlertService:
             log.debug("Alert already sent for object=%s, skipping", event.object_id)
             return
 
-        # Dispatch to all strategies
+        # Dispatch to all strategies; track whether at least one succeeded
+        delivered = False
         for strategy in self._strategies:
             try:
                 strategy.send(event.alert)
                 log.info("Alert dispatched via %s: %s", strategy.name(), event.alert.alert_id)
+                delivered = True
             except Exception:
                 log.exception("Failed to dispatch alert via %s", strategy.name())
 
-        # Store alert and mark as sent (dedup TTL from config)
-        self._event_repo.store_alert(event.alert.to_dict())
-        self._event_repo.mark_alert_sent(event.object_id, ttl=self._cfg.alert_dedup_ttl)
+        # Only persist and mark sent when delivery succeeded, so a transient
+        # alert-service outage doesn't permanently suppress the alert.
+        if delivered:
+            self._event_repo.store_alert(event.alert.to_dict())
+            self._event_repo.mark_alert_sent(event.object_id, ttl=self._cfg.alert_dedup_ttl)
 
     def create_alert_payload(
         self,

@@ -8,12 +8,10 @@ from __future__ import annotations
 
 import logging
 import os
-import signal
-import sys
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -36,7 +34,7 @@ from backend.service.alert_service import AlertService
 from backend.service.event_service import EventService
 from backend.service.matching_service import MatchingService
 from backend.service.poi_service import POIService
-from backend.strategy.alert import LogAlertStrategy, WebSocketAlertStrategy, AlertServiceStrategy
+from backend.strategy.alert import AlertServiceStrategy
 from backend.strategy.matching import CosineSimilarityStrategy
 
 logging.basicConfig(
@@ -48,41 +46,12 @@ log = logging.getLogger("poi.main")
 
 # Global references for cleanup
 _mqtt_adapter = None
-_ws_strategy = None
 
-
-def _alert_dict_to_ws_envelope(alert: dict) -> dict:
-    """Convert a Redis-stored alert dict to the WS broadcast envelope format.
-
-    Redis format uses event_type='poi_match_alert' with nested match/poi_metadata.
-    WS envelope format uses alert_type='POI_MATCH' with flat metadata — matches
-    the format the UI's mapEnvelopeToAlert() expects.
-    """
-    match = alert.get("match", {})
-    poi_meta = alert.get("poi_metadata", {})
-    return {
-        "alert_type": "POI_MATCH",
-        "metadata": {
-            "alert_id": alert.get("alert_id", ""),
-            "poi_id": alert.get("poi_id", ""),
-            "severity": alert.get("severity", "medium"),
-            "camera_id": match.get("camera_id", ""),
-            "similarity_score": match.get("similarity_score", 0.0),
-            "confidence": match.get("confidence", 0.0),
-            "bbox": match.get("bbox", []),
-            "frame_number": match.get("frame_number", 0),
-            "thumbnail_path": match.get("thumbnail_path", ""),
-            "notes": poi_meta.get("notes", ""),
-            "enrollment_date": poi_meta.get("enrollment_date", ""),
-            "total_previous_matches": poi_meta.get("total_previous_matches", 0),
-        },
-        "timestamp": alert.get("timestamp", ""),
-    }
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup / shutdown lifecycle."""
-    global _mqtt_adapter, _ws_strategy
+    global _mqtt_adapter
     cfg = get_config()
     log.info("=== POI Re-identification System Starting ===")
 
@@ -101,17 +70,10 @@ async def lifespan(app: FastAPI):
 
     # ── Strategy ──
     matching_strategy = CosineSimilarityStrategy(faiss_repo)
-    _ws_strategy = WebSocketAlertStrategy()
-    # Give the WS strategy a reference to the running event loop so it can
-    # schedule async broadcasts from the MQTT thread via run_coroutine_threadsafe.
-    import asyncio as _asyncio
-    _ws_strategy.set_event_loop(_asyncio.get_running_loop())
 
-    alert_strategies = [LogAlertStrategy()]
-    # Always register WS strategy — handles live alerts to connected UI clients
-    alert_strategies.append(_ws_strategy)
-    if "alert_service" in cfg.delivery_handlers:
-        alert_strategies.append(AlertServiceStrategy(cfg.alert_service_url))
+    # Single delivery strategy: forward all alerts to the alert-service.
+    # The alert-service owns log, WebSocket, and MQTT delivery.
+    alert_strategies = [AlertServiceStrategy(cfg.alert_service_url)]
 
     # ── Observer ──
     event_bus = EventBus()
@@ -178,33 +140,6 @@ def create_app() -> FastAPI:
     app.include_router(search_routes.router, prefix="/api/v1")
     app.include_router(camera_routes.router, prefix="/api/v1")
     app.include_router(thumbnail_routes.router, prefix="/api/v1")
-
-    # WebSocket endpoint for live alerts (real-time + history on connect)
-    @app.websocket("/ws/alerts")
-    async def websocket_alerts(ws: WebSocket):
-        import json as _json
-        await ws.accept()
-
-        # Replay historical alerts from Redis so page refresh keeps alert list
-        event_repo_ws = RedisEventRepository()
-        historical = event_repo_ws.get_recent_alerts(100)
-        if historical:
-            log.info("WS: replaying %d historical alerts to new client", len(historical))
-        for alert_dict in reversed(historical):  # send oldest first
-            try:
-                envelope = _alert_dict_to_ws_envelope(alert_dict)
-                await ws.send_text(_json.dumps(envelope))
-            except Exception:
-                break  # client disconnected mid-replay
-
-        if _ws_strategy:
-            _ws_strategy.register(ws)
-        try:
-            while True:
-                await ws.receive_text()
-        except WebSocketDisconnect:
-            if _ws_strategy:
-                _ws_strategy.unregister(ws)
 
     # Health check
     @app.get("/api/v1/status")

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import ANY, MagicMock
 
 from backend.domain.entities.match_result import AlertPayload, MatchResult
 from backend.domain.entities.poi import POI, POIStatus, ReferenceImage, Severity
@@ -49,7 +49,7 @@ class TestAlertService:
 
         strategy.send.assert_called_once_with(alert)
         event_repo.store_alert.assert_called_once()
-        event_repo.mark_alert_sent.assert_called_once_with("obj-1")
+        event_repo.mark_alert_sent.assert_called_once_with("obj-1", ttl=ANY)
 
     def test_idempotent_dedup(self):
         service, strategy, event_repo, _, bus = self._make_service(is_sent=True)
@@ -120,3 +120,26 @@ class TestAlertService:
 
         bad_strategy.send.assert_called_once()
         good_strategy.send.assert_called_once()  # Not blocked by bad_strategy's error
+        # good_strategy succeeded so alert should still be persisted
+        event_repo.store_alert.assert_called_once()
+        event_repo.mark_alert_sent.assert_called_once()
+
+    def test_failed_delivery_does_not_mark_sent(self):
+        """If every strategy fails, the alert is NOT marked sent so it can retry."""
+        bad_strategy = MagicMock()
+        bad_strategy.name.return_value = "bad"
+        bad_strategy.send.side_effect = RuntimeError("alert-service down")
+
+        event_repo = MagicMock()
+        event_repo.is_alert_sent.return_value = False
+        poi_repo = MagicMock()
+        bus = EventBus()
+        AlertService([bad_strategy], event_repo, poi_repo, bus)
+
+        alert = _make_alert_payload()
+        event = MatchFoundEvent(alert=alert, object_id="obj-f", timestamp="t1")
+        bus.publish("match_found", event)
+
+        bad_strategy.send.assert_called_once()
+        event_repo.store_alert.assert_not_called()
+        event_repo.mark_alert_sent.assert_not_called()
