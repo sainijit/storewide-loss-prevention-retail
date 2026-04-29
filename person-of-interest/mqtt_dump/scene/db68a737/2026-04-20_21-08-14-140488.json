@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T15:38:14.090Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "159eb777-f363-4ef3-9bfb-feb33a765da3",
+      "type": "person",
+      "translation": [
+        4.676920574547896,
+        4.669837408540961,
+        0.0
+      ],
+      "size": [
+        0.46386122176977285,
+        0.46386122176977285,
+        0.5345590595541634
+      ],
+      "velocity": [
+        0.06904378313647518,
+        0.08526299019970274,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T15:38:13.869Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 1648.0,
+          "y": 554.0,
+          "width": 122.0,
+          "height": 362.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "f65e9e23-3393-4614-b0eb-dd9997296064",
+      "type": "person",
+      "translation": [
+        5.808274735727933,
+        8.276147487680614,
+        -1.5066972932369227e-20
+      ],
+      "size": [
+        0.5726249732536735,
+        0.5726249732536735,
+        0.7022357034297785
+      ],
+      "velocity": [
+        0.043442937145488414,
+        0.8226986674566656,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": null,
+      "first_seen": "2026-04-20T15:38:00.470Z",
+      "camera_bounds": {}
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 8.3,
+  "rate": {
+    "Camera_02": 3.9230043844126326,
+    "Camera_01": 4.090132990445246
+  }
+}

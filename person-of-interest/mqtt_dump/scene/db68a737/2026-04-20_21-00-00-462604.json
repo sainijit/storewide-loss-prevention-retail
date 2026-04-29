@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T15:30:00.269Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "b937ff27-b99b-4458-a16b-104852399e28",
+      "type": "person",
+      "translation": [
+        5.980310245509361,
+        8.107568690444975,
+        -5.5429277259062e-20
+      ],
+      "size": [
+        0.6010206723220977,
+        0.6010206723220977,
+        0.6431430296400553
+      ],
+      "velocity": [
+        0.38927847887022626,
+        0.6469802943572368,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": null,
+      "first_seen": "2026-04-20T15:29:56.438Z",
+      "camera_bounds": {}
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "ff7d52ef-cb0d-4a88-9df1-758bc7aa776c",
+      "type": "person",
+      "translation": [
+        3.633489037204474,
+        3.8804907438329472,
+        0.0
+      ],
+      "size": [
+        0.419788898825332,
+        0.419788898825332,
+        0.48936341640529785
+      ],
+      "velocity": [
+        0.0847432647047082,
+        -0.22353748679400676,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": 1.9669954776763916,
+      "first_seen": "2026-04-20T15:29:49.906Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 1654.0,
+          "y": 581.0,
+          "width": 110.0,
+          "height": 332.0
+        }
+      }
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 9.0,
+  "rate": {
+    "Camera_02": 4.210706203960816,
+    "Camera_01": 4.237483528354826
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T16:37:08.570Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "a7624580-cecc-4d47-9480-bb093d320cd7",
+      "type": "person",
+      "translation": [
+        4.214788884353474,
+        4.564101750576589,
+        -6.164594026669384e-21
+      ],
+      "size": [
+        0.5596276372883784,
+        0.5596276372883784,
+        0.6057390397890601
+      ],
+      "velocity": [
+        -0.11340586540289405,
+        -0.1396679703814541,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": 0.0,
+      "first_seen": "2026-04-20T16:36:54.901Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 1750.0,
+          "y": 578.0,
+          "width": 152.0,
+          "height": 454.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "03e6e971-eb34-4f38-8dcc-400bb553c09c",
+      "type": "person",
+      "translation": [
+        5.8083890796125806,
+        7.691021287279136,
+        4.832328596273361e-23
+      ],
+      "size": [
+        0.4362749632946459,
+        0.4362749632946459,
+        0.5816395715560704
+      ],
+      "velocity": [
+        0.009485684430106785,
+        0.0482968018682499,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": null,
+      "first_seen": "2026-04-20T16:36:50.759Z",
+      "camera_bounds": {}
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 8.2,
+  "rate": {
+    "Camera_02": 3.3710289941655827,
+    "Camera_01": 6.338620576636444
+  }
+}

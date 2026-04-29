@@ -53,6 +53,7 @@ class Config:
 
     # Alert
     alert_webhook_url: str = ""
+    alert_service_url: str = ""
     delivery_handlers: list[str] = field(default_factory=lambda: ["log"])
 
     # Logging
@@ -83,16 +84,16 @@ class Config:
     @classmethod
     def _from_env(cls) -> Config:
         model_base = os.getenv("MODEL_BASE", "/models/intel")
-        scene_uid = os.getenv("SCENE_UID", "bfb9f86b-b152-4e7f-8099-7c251ed84630")
+        scene_uid = os.getenv("SCENE_UID", "db68a737-92db-4477-880b-07bc7d658ab9")
         mqtt_topic = os.getenv(
             "MQTT_TOPIC_EVENT",
-            f"scenescape/event/{scene_uid}/objects",
+            "scenescape/data/camera/+",
         )
         handlers_raw = os.getenv("DELIVERY_HANDLERS", "log")
         handlers = [h.strip() for h in handlers_raw.split(",") if h.strip()]
 
         return cls(
-            mqtt_host=os.getenv("MQTT_HOST", "localhost"),
+            mqtt_host=os.getenv("MQTT_HOST", ""),
             mqtt_port=int(os.getenv("MQTT_PORT", "1883")),
             mqtt_topic_event=mqtt_topic,
             mqtt_ca_cert=os.getenv("MQTT_CA_CERT", ""),
@@ -125,6 +126,7 @@ class Config:
             scenescape_api_url=os.getenv("SCENESCAPE_API_URL", ""),
             scenescape_api_token=os.getenv("SCENESCAPE_API_TOKEN", ""),
             alert_webhook_url=os.getenv("ALERT_WEBHOOK_URL", ""),
+            alert_service_url=os.getenv("ALERT_SERVICE_URL", "http://alert-service:8000"),
             delivery_handlers=handlers,
             log_level=os.getenv("LOG_LEVEL", "INFO"),
             object_cache_ttl=int(os.getenv("OBJECT_CACHE_TTL", "300")),

@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T15:58:02.757Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "acba0ac8-4957-4aae-a622-642536ec3e29",
+      "type": "person",
+      "translation": [
+        6.204109709042864,
+        8.20252280946468,
+        -4.17357796942511e-24
+      ],
+      "size": [
+        0.42190413142310756,
+        0.42190413142310756,
+        0.5391114338322437
+      ],
+      "velocity": [
+        0.17848157643824286,
+        0.2240961436843455,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": null,
+      "first_seen": "2026-04-20T15:57:58.098Z",
+      "camera_bounds": {}
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "a7624580-cecc-4d47-9480-bb093d320cd7",
+      "type": "person",
+      "translation": [
+        0.7827678752509055,
+        1.319571049304678,
+        0.0
+      ],
+      "size": [
+        1.1778083404364483,
+        1.1778083404364483,
+        1.1409056097391548
+      ],
+      "velocity": [
+        -0.3567614229503811,
+        -0.6106196634470065,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_02"
+      ],
+      "similarity": 32.01933670043945,
+      "first_seen": "2026-04-20T15:57:49.603Z",
+      "camera_bounds": {
+        "Camera_02": {
+          "x": 229.0,
+          "y": 276.0,
+          "width": 564.0,
+          "height": 794.0
+        }
+      }
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 10.6,
+  "rate": {
+    "Camera_02": 3.7734655784501068,
+    "Camera_01": 5.932232681020125
+  }
+}

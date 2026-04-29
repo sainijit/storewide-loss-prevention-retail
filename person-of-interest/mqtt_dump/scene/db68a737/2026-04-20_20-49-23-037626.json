@@ -1,0 +1,233 @@
+{
+  "timestamp": "2026-04-20T15:19:22.973Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "6340db24-7268-45ce-9176-0c6615634590",
+      "type": "person",
+      "translation": [
+        6.868768609866438,
+        7.055145630081139,
+        -5.629839229436624e-17
+      ],
+      "size": [
+        0.321279547064087,
+        0.321279547064087,
+        0.3378559634639043
+      ],
+      "velocity": [
+        -0.08947185972519509,
+        -0.10904538952080996,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T15:19:20.450Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 563.0,
+          "y": 335.0,
+          "width": 152.0,
+          "height": 192.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "5bb79d32-b13c-454f-a2c6-9921fa6d28b1",
+      "type": "person",
+      "translation": [
+        6.861861344254839,
+        7.056897132323529,
+        3.7313421604451156e-21
+      ],
+      "size": [
+        0.18970350123883772,
+        0.18970350123883772,
+        0.23141596873049122
+      ],
+      "velocity": [
+        0.003225277384175808,
+        -0.006079265825619614,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T15:19:19.961Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 455.0,
+          "y": 354.0,
+          "width": 98.0,
+          "height": 136.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "9949f239-2d7c-4abf-9496-f5cd2746adb0",
+      "type": "person",
+      "translation": [
+        2.3536939640140657,
+        5.591798213119296,
+        0.0
+      ],
+      "size": [
+        0.5226435107999827,
+        0.5226435107999827,
+        0.38437483448339027
+      ],
+      "velocity": [
+        -0.002611165414779354,
+        0.014496221709135539,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_02"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T15:19:19.945Z",
+      "camera_bounds": {
+        "Camera_02": {
+          "x": 1475.0,
+          "y": 490.0,
+          "width": 248.0,
+          "height": 266.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "e4ce1ad9-35c8-4614-b85c-857a2e3e1f50",
+      "type": "person",
+      "translation": [
+        2.073816781946307,
+        4.465460765497413,
+        0.0
+      ],
+      "size": [
+        0.31120348697490785,
+        0.31120348697490785,
+        0.24820778882823105
+      ],
+      "velocity": [
+        0.010673010607675525,
+        -0.16610801972149028,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_02"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T15:19:19.462Z",
+      "camera_bounds": {
+        "Camera_02": {
+          "x": 1360.0,
+          "y": 684.0,
+          "width": 148.0,
+          "height": 172.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "ff7d52ef-cb0d-4a88-9df1-758bc7aa776c",
+      "type": "person",
+      "translation": [
+        5.970905668014803,
+        8.030383361491305,
+        0.0
+      ],
+      "size": [
+        0.6449786809302003,
+        0.6449786809302003,
+        0.7531331826215297
+      ],
+      "velocity": [
+        0.3495156711959836,
+        0.5620996194142593,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": 0.0,
+      "first_seen": "2026-04-20T15:19:16.278Z",
+      "camera_bounds": {}
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 8.3,
+  "rate": {
+    "Camera_02": 4.067341314106719,
+    "Camera_01": 4.321979339128521
+  }
+}

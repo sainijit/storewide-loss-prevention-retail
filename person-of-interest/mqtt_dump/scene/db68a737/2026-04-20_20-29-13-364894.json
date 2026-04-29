@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T14:59:13.335Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "3386a4cc-9745-4731-b6d9-ce3693d635d3",
+      "type": "person",
+      "translation": [
+        6.789371255581342,
+        7.401924998502585,
+        2.0047729185820272e-19
+      ],
+      "size": [
+        0.24020239528794995,
+        0.24020239528794995,
+        0.23438979888522726
+      ],
+      "velocity": [
+        -0.00345165551016672,
+        0.03184351272721838,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T14:59:11.929Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 246.0,
+          "y": 513.0,
+          "width": 162.0,
+          "height": 186.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "42781b98-1d71-42d0-8351-a92baf8a16fd",
+      "type": "person",
+      "translation": [
+        5.906007812959573,
+        7.998193823867736,
+        2.2739429001231225e-20
+      ],
+      "size": [
+        0.5726249732536735,
+        0.5726249732536735,
+        0.7022357034297785
+      ],
+      "velocity": [
+        0.3194545128927966,
+        0.5643175734356161,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": 0.0,
+      "first_seen": "2026-04-20T14:59:06.538Z",
+      "camera_bounds": {}
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 8.3,
+  "rate": {
+    "Camera_02": 3.9311479822290676,
+    "Camera_01": 4.114021101370434
+  }
+}

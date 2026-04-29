@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T16:43:36.913Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "2693d317-89bb-4d95-9879-60a9fd8e9f73",
+      "type": "person",
+      "translation": [
+        6.181830491995037,
+        6.10378893460837,
+        1.6547992101833997e-23
+      ],
+      "size": [
+        0.22258777505919713,
+        0.22258777505919713,
+        0.23328829277264335
+      ],
+      "velocity": [
+        0.17439529022422917,
+        0.46759856650599446,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T16:43:34.162Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 926.0,
+          "y": 504.0,
+          "width": 86.0,
+          "height": 126.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "ff7d52ef-cb0d-4a88-9df1-758bc7aa776c",
+      "type": "person",
+      "translation": [
+        5.861179971334479,
+        7.980660852846767,
+        -1.2001529454373899e-21
+      ],
+      "size": [
+        0.5588332995155074,
+        0.5588332995155074,
+        0.7304675940121694
+      ],
+      "velocity": [
+        0.41508248202705056,
+        0.9494723475719549,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": 0.0,
+      "first_seen": "2026-04-20T16:43:11.139Z",
+      "camera_bounds": {}
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 9.0,
+  "rate": {
+    "Camera_02": 4.33796766906279,
+    "Camera_01": 4.563368295903767
+  }
+}

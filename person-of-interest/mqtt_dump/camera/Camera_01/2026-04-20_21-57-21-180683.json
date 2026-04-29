@@ -1,0 +1,71 @@
+{
+  "id": "Camera_01",
+  "debug_mac": "b5:c7:7b:3f:4c:a8",
+  "timestamp": "2026-04-20T16:27:21.014Z",
+  "debug_timestamp_end": "2026-04-20T16:27:21.179Z",
+  "debug_processing_time": 0.16477203369140625,
+  "rate": 4.359140036781322,
+  "objects": {
+    "person": [
+      {
+        "category": "person",
+        "confidence": 0.9993605017662048,
+        "bounding_box_px": {
+          "x": 1139,
+          "y": 456,
+          "width": 266,
+          "height": 624
+        },
+        "metadata": {
+          "object_id": {
+            "label": "",
+            "model_name": ""
+          },
+          "reid": {
+            "embedding_vector": "WqUnP1ZFFL/dA1k+4GVAvn4Y/D5f/pc+jXZ1vqHewT7ubHo+d7wavwrdWr4usJA9TClCP1Ec+TyCIEE/WENuP6qszb7XDqa+QCg/vte6zT6exII/tk2kvsRBm73yo/A+mJaVPSm4n74h1u4+q3JMvQ74gjyD2YY+obNOPYS74T5fIJs+Hj7mPiOR3r4thu69K92Ov1ligj7mQt8+6bD/vTgwsD+bmAQ/My81v0eMkD14JSO9FQO/PqinCL85JQQ+MGw1Po14bb4XA0o/Iz9+vr3qNbt+O0c+ECN3vuXDOT67n/o+Z4RXvR0+Uz431Vq/VpDrO84w5D7HWEy+r+IsPqvDTr4G3p2+5zP4Pp6oDL90sdM8qSdXPibaTz7Z7f++vROJvvtFoL7D6GU/AMfxPhMSgb7OSGa/0pcQP3irGL8+J9S+zCATP+x67j5v1Ac+JkDRPgvaLT+Duck+voQivhg7+rwnxEC/h6pcvurkur4oKuM+AXUJPrweXD/VSaY+qpO4vaDI2D4cl6W+8J3ivikqnr5S/IS/b8KpvvY99z5xsj8/hNU4PifMpD52rWc+Pu3CPpkwb7wdkus9plSRPjg3lb7DA0I+AKDOvktN1r4Tjfg9I8EJvnS5Tz5gmCy9E8XVvnp45j7thSO9XUh3PaPkkb49og6/xD9AvzMJHD+jcmu+RkACPnro1L3L1k89y2yrvrQz6b4v4ZU9G2gqP0npGb6wYIc8g46cP3ZVQz+AgaM++1/Mvu9TBT56dQE/eKsLPWVLRD568QS9uLCCv7Xfc75gI5K+YdzrPqw3x71Mkks+QYcCPqs5RD/ArRM/42eRPnmJPL+RlLw+krIkv380Rj4EHPA+ADiovqCa4z6fvJk+Flqxvho0VD+TfzY9UpudvkH++b0jVr6+03srvgW7d75ylHK+mjoyvnWxOb+D4K2+PKXDPuXQlj1UHQu/YL/YPVDDKr7xtSq+bmisvsmh1T79+gk/k8/pPvcd2r7UUfW+LLYKv5xkH78NS/27F1+Ovij+Bj4t61u+mAzgvirWQL8GhDm9lLbgPUuTPr2HJJw+bsIkP+z4aL1Q2xu+ZMWlv3snCb9WR+u+KaO8vMjCSD88U6O+6RvSPPiGMb8ba44+6dVavWMS1D6IBoI/fV0APu0lh77g3qI+ihgWvSS9k74qv7W9oyCfPsZP7j7PNZe9wKZgPqwp1Ly673q8k3Hkvg7sgT/tYl69J42Hvq+xVj5JEvC+j61CPVv+YL6xlpG+5fWCPdZlZD+B6FO/SpwMvyW8Hz8WU8g+6XrlvlCOGb87ilI/QB9kP1oOA76fN0S8XEsfv5a6kL+r5PY+qoWpPlD8sr7AJiI+E1k9PQ==",
+            "model_name": "torch-jit-export"
+          }
+        },
+        "id": 1
+      },
+      {
+        "category": "person",
+        "confidence": 0.767831027507782,
+        "bounding_box_px": {
+          "x": 1702,
+          "y": 673,
+          "width": 174,
+          "height": 387
+        },
+        "metadata": {
+          "object_id": {
+            "label": "",
+            "model_name": ""
+          },
+          "reid": {
+            "embedding_vector": "gFh3Psud/b6LdOc+HzcfPx0Yjz7SY2w+GMZtPsJkkr+UzVk9kbgsPus1DL6JOH0+MdMrP6Ittj7weJE+ET0Kv5sFTL+DPUG+Qqq2vuZfyz1HkqE/nHlhPxMSOT7nPtm+H4+svljsIj/j8co+0bzyPuYJjb+yMoy+nmxmv926qT5xQLk9miCiPdmx7L5Vzz2+ZUmgvTNYPj+pYS8+E2ULv9lSK77gUTg7nKZHPkuFBj+K9U280FMCvzRNmL7GDYE+CHrkPpMHHT+AKvI90NSlvtukYTxqz7y+IlwWvzU2PL+PMiM/yxYSvoCIej+IQyS/WrLBPvXrzL10OJc/IcwlP8xYoT6yvQM+CgeYvzc7Pb59oMu8ztljv0sAHD7ab1e87wlGv/TJLz/2rUc+Xa2/vqL0gr2t5Ue/enDmPoRpQ79aOjE/7+fCvk0xgj+BbiG/FxIAv6kYKz8adpK+9T9/v2V7wr6K/Sq/hx/PPj07bL5JCrk9rIzHO8Rjh73wj7G+GxlqvnrNpL4VOkE+fD1wPDRk371Qv+M9PH8PvnlTEj6GdSO/RD/HvkDzZT/66wq/fY2wvjHMhD+i/iM/+5etvlWgIT+LW96/V6szv43wPj7AZLq+wdrhPpThEr/QqQE/M5uGv8fAUr7sV8c+7xSZvj0wgr76Pli8Am+GP9lffz9BAgw+VX/Evt5rU74tTz2/LoNcv5bLQD7aiOG+TiLfPu+P/b0/lwQ/04kjP7GItr43iaA+gkyDv0TBBr8hwSk/ZkymPBFfzz64iby+hxVTv4EBpr4of/8+QLqtvoDOzD2tepi9pr4XP6WsbD/fEwG+aVkCPwDR8z15yw69UFByv41MvD1SX4U+/IrCPioanz7B+he9YSmovphprT9lP2S+NdW9PfiRxD4kZv++ynh0PsIFOb0JDDe9WUW+vk15K78bpbY+I76RPaKeBr4n4XG+cpm7vtIjjr795Si/GxEBPvu/Br6F+NS+PjCZvoZoFr8KCDI8VdX7vEWBhr9pqd++lkPqvj9rWb8QoRo+CFPavgVBCr+zFEC+VHG7vtlWPj5BiU09Ikinvi9TH751fns/1vcdP1vduz2vxB4+ZA7WvWQBNT6A8lY+oD1NP2AWjj7WugM/dRiJvvZcwr1C7AC+RO16vq9CoL253ua+ym0Jv9beD72uLTW8X9lGvIu69L61Aus+QxqDvnFwSL9FXBE/AN2VPhFpVT5a/JY+9VRovli+/T5gBoq9IEsDv7+eHD9PeYu+oA55v30sMD5hiiK+D7S/viuv4L7Wg4M+tvyxvwpgwD3RR9A9zZcFvr1GDT7TOsK8PsqOPxTSwT7yiZ2+w90mvihPwb7BPFM+STCbvg==",
+            "model_name": "torch-jit-export"
+          }
+        },
+        "id": 2
+      },
+      {
+        "category": "person",
+        "confidence": 1.0,
+        "bounding_box_px": {
+          "x": 1332,
+          "y": 495,
+          "width": 60,
+          "height": 90
+        },
+        "metadata": {
+          "object_id": {
+            "label": "",
+            "model_name": ""
+          }
+        },
+        "id": 3
+      }
+    ]
+  }
+}

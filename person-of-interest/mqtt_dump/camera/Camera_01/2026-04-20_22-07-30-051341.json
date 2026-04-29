@@ -1,0 +1,75 @@
+{
+  "id": "Camera_01",
+  "debug_mac": "b5:c7:7b:3f:4c:a8",
+  "timestamp": "2026-04-20T16:37:29.837Z",
+  "debug_timestamp_end": "2026-04-20T16:37:30.050Z",
+  "debug_processing_time": 0.2120969295501709,
+  "rate": 3.838904727801619,
+  "objects": {
+    "person": [
+      {
+        "category": "person",
+        "confidence": 0.9995611310005188,
+        "bounding_box_px": {
+          "x": 1015,
+          "y": 437,
+          "width": 340,
+          "height": 643
+        },
+        "metadata": {
+          "object_id": {
+            "label": "",
+            "model_name": ""
+          },
+          "reid": {
+            "embedding_vector": "cUUpP2Z0DL9y4gA+ET+CvgIcUj+mg8M+RaUmvVtuhj5jfsY+xoNLvtKflL6K/8O88EUOP0LniL6fGXI/6mpGP8uywb779D6+7OXLvpO6ID9Z2KE/r4w/vsSrWbswByA/wUsEPimO2L7mDu4+PMjlvSz9Az1z+KM+LEJhPgr8lj4giqI9vmKGPpUsI78FuvW94PtTv3zEEz5ueBk/Wriwu4YpsT9u2zU//dFSv9Ul2Dyxqmy9cVYgP0jc9r6eAsg9Oo8fP/+ZUb70ogs/mGLUvkzFOj7mIWI9B0xEPdGzZz5b9WI/7gHKPRMc1zybH4y/JaVivrcPYT7tQmY9+7ITPuG+g74HMsC+dgJ6vfjRsL4qkhc9QPGSPqtBbr0Y7Be/q0KIvmyvX74BExk/vhlFPr1FLj68FjW/d+4gP0YgB78YpZq+fN8rP/maPz+woTk+2eqtPjo7Kz9kBuQ+irZPvjqLjj0Nu4W/DRaIvshAkb4L5bk+Cd6WPVrElT5pJsw9ihAHvvqOiD626wi+WcWUvqFZCLyOZQa/KmTHvjiCBj/pRqc+WqfwPc5PiT4S1ZA+YIbdPjt0mTy4TVg+ohpXPgycx77ntk4+4IaEvt+tGr4YppI+20eGPQPjAL290pE94w8RvsDDEz6MTyU+8WSGPtmNWr4ZGu2+9RbFvhG9Bz+1v+68AIkpP6INrT3VC7I9dHvVvYsxxr7xld49IKGhPvO2jL3O3uk840elP7T63D7BkDI/Azj4viRBTz0e3g8/TmVVPr0xpz3+iHI+CmZKv9+fyr6AVaG+CIceP7pJjL4jfsA+r9sovS2rCD9TKVc/rH2mPq6OZ787QMw+QGomv/vznDwgZYk+/HQVv+Mi8T54QoE+CTjBvuHPaD/4cZA+uXcDv7NpLr4XUfO+z0atvo/mkr3Eh0++QFmAvqqtRL95t5O+to72PstbHj76pN++rZrjvdoBl74O5e+98SCnvi9rHz/9QNQ+yo7TPmcJ176gzAG/sTITv4oO9b5OpV4+gKSrvrGflT7zi/K9Ocmrvkh1Q7+BAYC+FcjFPqxxCb5WHw4+bk30Pk4COr5hNEe7GKemvyDT/r7QYgS/2KpOviGDQz9/2Ja+ztjRPjar/77tbtY8O5abvURdJj86/lw/A0lkPhhWSr7/cLo+3OJwvpVcEL7rJmq+qhe+O7AHAT7OuV69nrP2PgLKiTyY0RO+ucervoiyez/WxDi+nJ6UvSb1dj7d6NC+B9WNvdEAij012wC/sqIOvpQ/jj+ONmy/Tyj8vhp+ZD5yiO0+JVKvvjgXAL8r4oQ/rW92PwSz3768JHg9mRw1v6kKk7/Gmf49pvi+PpxQWL5YB4U+UFDdPQ==",
+            "model_name": "torch-jit-export"
+          }
+        },
+        "id": 1,
+        "sub_objects": {
+          "face": [
+            {
+              "category": "face",
+              "confidence": 0.9480752944946289,
+              "bounding_box_px": {
+                "x": 1147,
+                "y": 463,
+                "width": 74,
+                "height": 107
+              },
+              "metadata": {
+                "inference_layer_name:658": {
+                  "label": "",
+                  "model_name": "torch-jit-export"
+                },
+                "object_id": {
+                  "label": "",
+                  "model_name": ""
+                }
+              },
+              "id": 1
+            }
+          ]
+        }
+      },
+      {
+        "category": "person",
+        "confidence": 1.0,
+        "bounding_box_px": {
+          "x": 1701,
+          "y": 671,
+          "width": 170,
+          "height": 388
+        },
+        "metadata": {
+          "object_id": {
+            "label": "",
+            "model_name": ""
+          }
+        },
+        "id": 2
+      }
+    ]
+  }
+}

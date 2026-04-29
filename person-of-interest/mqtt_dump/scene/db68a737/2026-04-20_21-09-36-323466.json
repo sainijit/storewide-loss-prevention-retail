@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T15:39:36.298Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "5f3f45e2-5be3-46ac-89d3-13196b56c21d",
+      "type": "person",
+      "translation": [
+        5.86534624691067,
+        7.808154345442958,
+        -9.704525377665098e-26
+      ],
+      "size": [
+        0.4585941151527724,
+        0.4585941151527724,
+        0.714116331953975
+      ],
+      "velocity": [
+        0.4110856121795159,
+        0.6457587146044652,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": null,
+      "first_seen": "2026-04-20T15:39:28.622Z",
+      "camera_bounds": {}
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "a7624580-cecc-4d47-9480-bb093d320cd7",
+      "type": "person",
+      "translation": [
+        0.3930552170154774,
+        1.1998097470387743,
+        -3.9344795365580815e-23
+      ],
+      "size": [
+        1.1771539997419287,
+        1.1771539997419287,
+        1.1406507727583608
+      ],
+      "velocity": [
+        -0.4101345927537899,
+        -0.3403097399451283,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_02"
+      ],
+      "similarity": 0.0,
+      "first_seen": "2026-04-20T15:39:26.929Z",
+      "camera_bounds": {
+        "Camera_02": {
+          "x": 0.0,
+          "y": 258.0,
+          "width": 564.0,
+          "height": 794.0
+        }
+      }
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 8.5,
+  "rate": {
+    "Camera_02": 4.008059401748763,
+    "Camera_01": 4.2309512509370775
+  }
+}

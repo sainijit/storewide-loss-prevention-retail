@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T15:13:52.912Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "727c12cb-5c94-4bf1-9752-2cc53df89e19",
+      "type": "person",
+      "translation": [
+        7.088189525890053,
+        7.40044877114156,
+        -7.970066061375731e-17
+      ],
+      "size": [
+        0.32164425344843384,
+        0.32164425344843384,
+        0.33739715564117617
+      ],
+      "velocity": [
+        -0.024287835091353457,
+        -0.04701524642457388,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T15:13:52.225Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 570.0,
+          "y": 341.0,
+          "width": 152.0,
+          "height": 192.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "ff7d52ef-cb0d-4a88-9df1-758bc7aa776c",
+      "type": "person",
+      "translation": [
+        5.889080573109606,
+        7.955938828033661,
+        0.0
+      ],
+      "size": [
+        0.6465100072088035,
+        0.6465100072088035,
+        0.7531514806517944
+      ],
+      "velocity": [
+        0.3497706234942668,
+        0.6046171427182977,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": 0.0,
+      "first_seen": "2026-04-20T15:13:48.123Z",
+      "camera_bounds": {}
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 8.3,
+  "rate": {
+    "Camera_02": 3.9216891249569947,
+    "Camera_01": 4.253794582223101
+  }
+}

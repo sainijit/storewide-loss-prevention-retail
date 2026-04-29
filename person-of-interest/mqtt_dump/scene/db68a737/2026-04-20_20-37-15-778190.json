@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T15:07:15.710Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "e3de3545-8373-4147-95c3-1df8616cc97c",
+      "type": "person",
+      "translation": [
+        6.856415051790033,
+        6.871059717279126,
+        -2.137824913925368e-25
+      ],
+      "size": [
+        0.2268598298864326,
+        0.2268598298864326,
+        0.2572609398561711
+      ],
+      "velocity": [
+        0.07811217519019971,
+        0.008641215139535044,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T15:07:14.836Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 666.0,
+          "y": 386.0,
+          "width": 100.0,
+          "height": 138.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "ff7d52ef-cb0d-4a88-9df1-758bc7aa776c",
+      "type": "person",
+      "translation": [
+        5.682966811116371,
+        7.6744194539690405,
+        -4.230828731525165e-17
+      ],
+      "size": [
+        0.577073322211012,
+        0.577073322211012,
+        0.7852489514558655
+      ],
+      "velocity": [
+        0.2823634198154782,
+        0.5658501072514993,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": 1.4922587871551514,
+      "first_seen": "2026-04-20T15:07:11.013Z",
+      "camera_bounds": {}
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 8.4,
+  "rate": {
+    "Camera_02": 3.9558920358481027,
+    "Camera_01": 4.169186010789417
+  }
+}

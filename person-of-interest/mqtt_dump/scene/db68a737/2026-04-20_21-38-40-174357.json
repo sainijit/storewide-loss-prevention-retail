@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T16:08:40.149Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "8d46a4db-784b-475d-80c1-0848a572d496",
+      "type": "person",
+      "translation": [
+        7.032549129687981,
+        7.235773268239447,
+        1.4147048829594936e-20
+      ],
+      "size": [
+        0.29985296542816453,
+        0.29985296542816453,
+        0.3198926631233356
+      ],
+      "velocity": [
+        0.023168036330472444,
+        -0.01533251359525176,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T16:08:39.575Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 589.0,
+          "y": 352.0,
+          "width": 140.0,
+          "height": 180.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "ff7d52ef-cb0d-4a88-9df1-758bc7aa776c",
+      "type": "person",
+      "translation": [
+        5.574812005261048,
+        7.530799933423069,
+        -3.4218020846109364e-17
+      ],
+      "size": [
+        0.5973949329065515,
+        0.5973949329065515,
+        0.8063426486448924
+      ],
+      "velocity": [
+        0.2634772549604535,
+        0.5793013975618683,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": 0.0,
+      "first_seen": "2026-04-20T16:08:35.830Z",
+      "camera_bounds": {}
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 8.8,
+  "rate": {
+    "Camera_02": 4.2014181081936,
+    "Camera_01": 4.440511500096687
+  }
+}

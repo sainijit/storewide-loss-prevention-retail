@@ -26,7 +26,7 @@ fi
 OMZ_BASE_URL="https://storage.openvinotoolkit.org/repositories/open_model_zoo/2023.0/models_bin/1"
 
 # Models required by the DLStreamer pipeline (from .env or defaults)
-DEFAULT_MODELS="person-detection-retail-0013,person-reidentification-retail-0277"
+DEFAULT_MODELS="person-detection-retail-0013,person-reidentification-retail-0277,face-detection-retail-0004,face-reidentification-retail-0095"
 IFS=',' read -ra MODELS <<< "${MODELS:-${DEFAULT_MODELS}}"
 
 # Default precision; override with MODEL_PRECISION env or --precisions flag

@@ -20,7 +20,9 @@ RUN echo 'server { \
     root /usr/share/nginx/html; \
     location / { try_files $uri $uri/ /index.html; } \
     location /api/ { proxy_pass http://poi-backend:8000; } \
+    location /uploads/ { proxy_pass http://poi-backend:8000/uploads/; proxy_set_header Host $host; } \
     location /ws/ { proxy_pass http://poi-backend:8000; proxy_http_version 1.1; proxy_set_header Upgrade $http_upgrade; proxy_set_header Connection "upgrade"; } \
+    location /alerts/ws { proxy_pass http://poi-backend:8000/ws/alerts; proxy_http_version 1.1; proxy_set_header Upgrade $http_upgrade; proxy_set_header Connection "upgrade"; proxy_read_timeout 3600s; } \
 }' > /etc/nginx/conf.d/default.conf
 
 EXPOSE 80

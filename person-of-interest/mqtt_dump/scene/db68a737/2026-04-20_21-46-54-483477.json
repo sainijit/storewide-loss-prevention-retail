@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T16:16:54.431Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "ff7d52ef-cb0d-4a88-9df1-758bc7aa776c",
+      "type": "person",
+      "translation": [
+        5.843109743297108,
+        7.870981424933035,
+        -4.996482733158344e-21
+      ],
+      "size": [
+        0.5659639000977332,
+        0.5659639000977332,
+        0.7410660255853754
+      ],
+      "velocity": [
+        0.17766312080260432,
+        0.38984646477709073,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": 0.0,
+      "first_seen": "2026-04-20T16:16:47.506Z",
+      "camera_bounds": {}
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "3fbf5be3-ce90-42c8-9495-6cc601cadb08",
+      "type": "person",
+      "translation": [
+        6.813080993020222,
+        7.33803470168393,
+        -4.7166589775505725e-21
+      ],
+      "size": [
+        0.3306914360731108,
+        0.3306914360731108,
+        0.3419094433856397
+      ],
+      "velocity": [
+        -0.10659461082763626,
+        -0.34485165710463667,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T16:16:53.120Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 484.0,
+          "y": 307.0,
+          "width": 164.0,
+          "height": 200.0
+        }
+      }
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 11.2,
+  "rate": {
+    "Camera_02": 4.011688044372635,
+    "Camera_01": 6.214758960017009
+  }
+}

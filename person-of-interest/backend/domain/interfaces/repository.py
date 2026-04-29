@@ -85,6 +85,26 @@ class EventRepository(ABC):
     @abstractmethod
     def mark_alert_sent(self, object_id: str, ttl: int = 300) -> None: ...
 
+    @abstractmethod
+    def store_thumbnail(self, object_id: str, b64_jpeg: str, ttl: int = 3600) -> None: ...
+
+    @abstractmethod
+    def get_thumbnail(self, object_id: str) -> Optional[str]: ...
+
+    @abstractmethod
+    def claim_thumbnail(self, object_id: str, ttl: int = 30) -> bool:
+        """Atomically claim the right to capture thumbnail. Returns True if claim succeeded."""
+        ...
+
+    @abstractmethod
+    def get_region_presence(self, object_id: str, scene_id: str, region_id: str) -> Optional[dict]: ...
+
+    @abstractmethod
+    def delete_region_presence(self, object_id: str, scene_id: str, region_id: str) -> None: ...
+
+    @abstractmethod
+    def store_region_dwell(self, object_id: str, timestamp: str, scene_id: str, region_id: str, region_name: str, dwell_sec: Optional[float] = None) -> None: ...
+
 
 class EmbeddingMappingRepository(ABC):
     """Interface for mapping FAISS internal IDs to POI IDs."""

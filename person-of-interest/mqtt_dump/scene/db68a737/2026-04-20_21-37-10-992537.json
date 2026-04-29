@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T16:07:10.829Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "f44bee81-1545-4f84-9c70-a824a6cf82d0",
+      "type": "person",
+      "translation": [
+        5.834921902349816,
+        7.855315843548606,
+        -2.9904334769859962e-18
+      ],
+      "size": [
+        0.5615390356212293,
+        0.5615390356212293,
+        0.6689303479708769
+      ],
+      "velocity": [
+        -0.14697753904556896,
+        0.3277015675468157,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": null,
+      "first_seen": "2026-04-20T16:07:07.546Z",
+      "camera_bounds": {}
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "efbd6552-4b4c-412a-924f-cb05051527f6",
+      "type": "person",
+      "translation": [
+        3.6891836892090857,
+        4.550682827842074,
+        0.0
+      ],
+      "size": [
+        0.47359816147624034,
+        0.47359816147624034,
+        0.5376532135385145
+      ],
+      "velocity": [
+        0.07040347085646226,
+        -0.357596688792358,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T16:07:01.860Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 1657.0,
+          "y": 547.0,
+          "width": 122.0,
+          "height": 360.0
+        }
+      }
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 8.6,
+  "rate": {
+    "Camera_02": 4.166364034784937,
+    "Camera_01": 4.217574215957543
+  }
+}

@@ -23,7 +23,6 @@ class EmbeddingModelFactory:
     def __init__(self) -> None:
         self._cfg = get_config()
         self._det = None
-        self._lm = None
         self._reid = None
         self._core = None
 
@@ -44,13 +43,10 @@ class EmbeddingModelFactory:
             self._det = self._core.compile_model(
                 self._cfg.det_model, self._cfg.inference_device
             )
-            self._lm = self._core.compile_model(
-                self._cfg.lm_model, self._cfg.inference_device
-            )
             self._reid = self._core.compile_model(
                 self._cfg.reid_model, self._cfg.inference_device
             )
-            log.info("Face models loaded")
+            log.info("Face models loaded (no landmark alignment — matches DLStreamer runtime)")
         except Exception:
             log.exception("Failed to load OpenVINO models")
             raise
@@ -93,37 +89,13 @@ class EmbeddingModelFactory:
         x1, y1, x2, y2 = best_face
         face_crop = image[y1:y2, x1:x2]
 
-        # 2. Landmarks
-        lm_input = self._lm.input(0)
-        lm_output = self._lm.output(0)
-        _, _, lm_h, lm_w = lm_input.shape
-        lm_blob = cv2.resize(face_crop, (lm_w, lm_h))
-        lm_blob = lm_blob.transpose(2, 0, 1).reshape(1, 3, lm_h, lm_w).astype(np.float32)
-        landmarks = self._lm(lm_blob)[lm_output].flatten()
+        # Resize to 128x128 — same preprocessing as DLStreamer runtime
+        # (DLStreamer uses plain resize, no landmark alignment, per model-proc config)
+        aligned = cv2.resize(face_crop, (128, 128))
 
-        # 3. Align
-        face_w, face_h = x2 - x1, y2 - y1
-        src_pts = np.array(
-            [
-                [float(landmarks[0]) * face_w, float(landmarks[1]) * face_h],
-                [float(landmarks[2]) * face_w, float(landmarks[3]) * face_h],
-                [float(landmarks[4]) * face_w, float(landmarks[5]) * face_h],
-            ],
-            dtype=np.float32,
-        )
-        dst_pts = (
-            np.array(
-                [[38.2946, 51.6963], [73.5318, 51.5014], [56.0252, 71.7366]],
-                dtype=np.float32,
-            )
-            * (128.0 / 112.0)
-        )
-        M = cv2.getAffineTransform(src_pts, dst_pts)
-        aligned = cv2.warpAffine(face_crop, M, (128, 128))
-
-        # 4. Embedding
+        # 2. Embedding
         reid_blob = aligned.transpose(2, 0, 1).reshape(1, 3, 128, 128).astype(np.float32)
-        embedding = self._reid(reid_blob)[self._reid.output(0)][0]
+        embedding = self._reid(reid_blob)[self._reid.output(0)][0].flatten()
         embedding = embedding / np.linalg.norm(embedding)
 
         return {

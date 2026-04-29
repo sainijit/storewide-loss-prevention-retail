@@ -161,29 +161,39 @@ NC := \033[0m
 
 .PHONY: build
 build:
+	@echo "$(BLUE)=== Pulling SceneScape images ===$(NC)"
+	$(COMPOSE_SCENESCAPE) pull
+	@echo ""
+	@echo "$(BLUE)=== Building POI images ===$(NC)"
 ifeq ($(REGISTRY),false)
-	$(COMPOSE_POI) build
+	$(COMPOSE_POI) build poi-backend ui
 else
-	$(COMPOSE_POI) build
+	$(COMPOSE_POI) build poi-backend ui
 	docker tag person-of-interest-poi-backend $(REGISTRY)/poi-backend:latest
 	docker tag person-of-interest-ui $(REGISTRY)/poi-ui:latest
 endif
+	@echo "$(GREEN)Build complete.$(NC)"
 
 .PHONY: up
 up:
-	$(COMPOSE_POI) up -d
+	@echo "$(BLUE)=== Starting SceneScape services ===$(NC)"
+	-$(COMPOSE_SCENESCAPE) up -d --no-recreate
 	@echo ""
-	@echo "POI System running:"
+	@echo "$(BLUE)=== Starting POI services ===$(NC)"
+	$(COMPOSE_POI) up -d poi-backend ui poi-alert-service
+	@echo ""
+	@echo "System running:"
+	@echo "  SceneScape UI:   https://localhost:8443"
 	@echo "  Backend API:     http://localhost:8000"
-	@echo "  UI:              http://localhost:3000"
-	@echo "  Redis:           localhost:6379"
+	@echo "  POI UI:          http://localhost:3000"
 	@echo "  Alert Service:   http://localhost:8001"
 	@echo ""
 	@echo "To stop: make down"
 
 .PHONY: down
 down:
-	$(COMPOSE_POI) down
+	-$(COMPOSE_POI) down
+	-$(COMPOSE_SCENESCAPE) down
 
 .PHONY: logs
 logs:

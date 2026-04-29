@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T16:36:41.755Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "9eb235be-5c26-4efc-827e-d5060f698e3d",
+      "type": "person",
+      "translation": [
+        6.761145826921073,
+        6.708676117760572,
+        -1.3465102526491346e-25
+      ],
+      "size": [
+        0.24538418886748303,
+        0.24538418886748303,
+        0.26714776524713346
+      ],
+      "velocity": [
+        0.011246765559620191,
+        0.030169477488416963,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T16:36:41.564Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 765.0,
+          "y": 400.0,
+          "width": 100.0,
+          "height": 138.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "ff7d52ef-cb0d-4a88-9df1-758bc7aa776c",
+      "type": "person",
+      "translation": [
+        5.36187600370231,
+        7.190598925726824,
+        -2.0134514988091395e-19
+      ],
+      "size": [
+        0.6413960920348716,
+        0.6413960920348716,
+        0.8511202958697819
+      ],
+      "velocity": [
+        0.20609289869567587,
+        0.5707066235046242,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": 0.0,
+      "first_seen": "2026-04-20T16:36:38.030Z",
+      "camera_bounds": {}
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 8.6,
+  "rate": {
+    "Camera_02": 4.196219430718082,
+    "Camera_01": 4.504126039554878
+  }
+}

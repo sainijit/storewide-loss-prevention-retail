@@ -151,6 +151,53 @@ class RedisEventRepository(EventRepository):
     def mark_alert_sent(self, object_id: str, ttl: int = 300) -> None:
         self._r.setex(f"alert:sent:{object_id}", ttl, "1")
 
+    def store_thumbnail(self, object_id: str, b64_jpeg: str, ttl: int = 3600) -> None:
+        """Store base64 JPEG thumbnail for an object. TTL defaults to 1 hour."""
+        self._r.setex(f"thumbnail:{object_id}", ttl, b64_jpeg)
+
+    def get_thumbnail(self, object_id: str) -> Optional[str]:
+        raw = self._r.get(f"thumbnail:{object_id}")
+        return raw.decode() if isinstance(raw, bytes) else raw
+
+    def claim_thumbnail(self, object_id: str, ttl: int = 30) -> bool:
+        """Atomically claim the right to capture thumbnail (NX). Returns True if claim acquired."""
+        return bool(self._r.set(f"thumbnail:claiming:{object_id}", "1", ex=ttl, nx=True))
+
+    def store_region_presence(self, object_id, timestamp, scene_id, region_id, region_name, camera_id=None):
+        """Store region entry presence record."""
+        import json
+        key = f"region:presence:{scene_id}:{region_id}:{object_id}"
+        data = {"first_seen": timestamp, "region_name": region_name, "camera_id": camera_id or ""}
+        self._r.setex(key, 3600, json.dumps(data))  # 1h TTL
+
+    def get_region_presence(self, object_id, scene_id, region_id):
+        """Get region presence record."""
+        import json
+        key = f"region:presence:{scene_id}:{region_id}:{object_id}"
+        raw = self._r.get(key)
+        return json.loads(raw) if raw else None
+
+    def delete_region_presence(self, object_id, scene_id, region_id):
+        """Delete region presence record after exit."""
+        key = f"region:presence:{scene_id}:{region_id}:{object_id}"
+        self._r.delete(key)
+
+    def store_region_dwell(self, object_id, timestamp, scene_id, region_id, region_name, dwell_sec=None):
+        """Store region dwell record (entry + exit + duration)."""
+        import json
+        from datetime import datetime, timezone
+        date_key = timestamp[:10] if len(timestamp) >= 10 else datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        key = f"region:dwell:{object_id}:{scene_id}:{region_id}:{date_key}"
+        data = {
+            "object_id": object_id,
+            "scene_id": scene_id,
+            "region_id": region_id,
+            "region_name": region_name,
+            "exit_time": timestamp,
+            "dwell_sec": dwell_sec,
+        }
+        self._r.setex(key, 86400 * 7, json.dumps(data))  # 7 day TTL
+
 
 class RedisEmbeddingMappingRepository(EmbeddingMappingRepository):
     """Maps FAISS internal integer IDs to POI string IDs."""

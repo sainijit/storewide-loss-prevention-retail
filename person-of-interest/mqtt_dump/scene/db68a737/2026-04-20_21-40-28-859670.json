@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T16:10:28.833Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "2e200282-af43-4f09-ab82-b41303709624",
+      "type": "person",
+      "translation": [
+        7.280759617932183,
+        7.505687018840961,
+        6.7420795247723336e-21
+      ],
+      "size": [
+        0.3504113623691216,
+        0.3504113623691216,
+        0.35690408076698144
+      ],
+      "velocity": [
+        -0.030809736075872955,
+        -0.12093475850505483,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T16:10:28.418Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 409.0,
+          "y": 278.0,
+          "width": 182.0,
+          "height": 216.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "ff7d52ef-cb0d-4a88-9df1-758bc7aa776c",
+      "type": "person",
+      "translation": [
+        5.788381038877301,
+        7.82304350652198,
+        1.9230636356395144e-19
+      ],
+      "size": [
+        0.671363793119431,
+        0.671363793119431,
+        0.7739560280867637
+      ],
+      "velocity": [
+        0.3598113702697404,
+        0.6815311246480417,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": 0.0,
+      "first_seen": "2026-04-20T16:10:24.658Z",
+      "camera_bounds": {}
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 9.0,
+  "rate": {
+    "Camera_02": 4.290190568809335,
+    "Camera_01": 4.58440493405708
+  }
+}

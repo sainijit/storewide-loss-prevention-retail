@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T16:37:07.939Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "a7624580-cecc-4d47-9480-bb093d320cd7",
+      "type": "person",
+      "translation": [
+        4.227627263945692,
+        4.601776834121981,
+        -1.1366770769916892e-20
+      ],
+      "size": [
+        0.5612128750278229,
+        0.5612128750278229,
+        0.606025252491885
+      ],
+      "velocity": [
+        -0.15416792602087803,
+        -0.17162740655335662,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": 0.0,
+      "first_seen": "2026-04-20T16:36:54.901Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 1753.0,
+          "y": 578.0,
+          "width": 152.0,
+          "height": 454.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "03e6e971-eb34-4f38-8dcc-400bb553c09c",
+      "type": "person",
+      "translation": [
+        5.671903718439102,
+        7.533274339313729,
+        5.555738189312488e-23
+      ],
+      "size": [
+        0.47002288561463423,
+        0.47002288561463423,
+        0.6152884828995628
+      ],
+      "velocity": [
+        -0.054679001641262014,
+        -0.014595661712024385,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": null,
+      "first_seen": "2026-04-20T16:36:50.759Z",
+      "camera_bounds": {}
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 8.1,
+  "rate": {
+    "Camera_02": 3.3710289941655827,
+    "Camera_01": 6.338620576636444
+  }
+}

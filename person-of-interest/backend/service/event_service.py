@@ -102,3 +102,22 @@ class EventService:
                 "query_latency_ms": 0,
             },
         }
+
+    def store_region_entry(self, object_id, timestamp, scene_id, region_id, region_name, camera_id=None):
+        """Record region entry — store presence key in Redis."""
+        self._repo.store_region_presence(object_id, timestamp, scene_id, region_id, region_name, camera_id)
+
+    def store_region_exit(self, object_id, timestamp, scene_id, region_id, region_name):
+        """Record region exit — calculate dwell time and store."""
+        entry_data = self._repo.get_region_presence(object_id, scene_id, region_id)
+        dwell_sec = None
+        if entry_data:
+            try:
+                from datetime import datetime, timezone
+                t0 = datetime.fromisoformat(entry_data["first_seen"].replace("Z", "+00:00"))
+                t1 = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+                dwell_sec = (t1 - t0).total_seconds()
+            except Exception:
+                pass
+        self._repo.store_region_dwell(object_id, timestamp, scene_id, region_id, region_name, dwell_sec)
+        self._repo.delete_region_presence(object_id, scene_id, region_id)

@@ -13,14 +13,21 @@ services:
     environment:
       - REDIS_HOST=redis
       - PYTHONPATH=/app
+      - ALERT_SERVICE_URL=http://poi-alert-service:8000
+      - DELIVERY_HANDLERS=log,alert_service
+      - ALERT_DEDUP_TTL=60
+      - RTSP_BASE_URL=rtsp://mediaserver:8554
+      - SIMILARITY_THRESHOLD=0.6
     volumes:
       - faiss-data:/data/faiss
       - upload-data:/data/uploads
+      - ./models/intel/intel:/models/intel:ro
     depends_on:
       redis:
         condition: service_healthy
     networks:
       - poi-net
+      - storewide-lp
 
   # ── UI ─────────────────────────────────────────────────
   ui:
@@ -54,7 +61,7 @@ services:
       - poi-net
 
   # ── Alert Service ──────────────────────────────────────
-  alert-service:
+  poi-alert-service:
     image: intel/alert-service:0.0.1
     container_name: poi-alert-service
     restart: unless-stopped
@@ -65,6 +72,42 @@ services:
     environment:
       - MQTT_HOST=${MQTT_HOST:-localhost}
       - MQTT_PORT=${MQTT_PORT:-1883}
+      - DELIVERY_HANDLERS=log,websocket
+    volumes:
+      - ./configs/alert-service-config.yaml:/app/config/config.yaml:ro
+      - ./configs/alert-service-overrides/ws_manager.py:/app/src/delivery/ws_manager.py:ro
+    networks:
+      - poi-net
+      - storewide-lp
+
+  # ── MCP Server ────────────────────────────────────────────────────────────
+  mcp-server:
+    build:
+      context: .
+      dockerfile: mcp_server/Dockerfile
+    container_name: poi-mcp-server
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=redis
+      - POI_BACKEND_URL=http://poi-backend:8000
+      - MCP_FILESYSTEM_ROOT=/app
+      - MCP_TRANSPORT=streamable-http
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=9000
+      - PYTHONPATH=/app
+    volumes:
+      # Mount Docker socket so docker_tools can manage host containers
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - faiss-data:/data/faiss:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+      poi-backend:
+        condition: service_started
     networks:
       - poi-net
 
@@ -76,3 +119,5 @@ volumes:
 networks:
   poi-net:
     driver: bridge
+  storewide-lp:
+    external: true

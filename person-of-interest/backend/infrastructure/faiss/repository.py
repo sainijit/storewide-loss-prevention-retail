@@ -83,6 +83,7 @@ class FAISSRepository(EmbeddingRepository):
             with self._search_lock:
                 self._index.add_with_ids(arr, id_arr)
             log.info("Added %d vectors for poi=%s (ids=%s)", len(vecs), poi_id, ids_assigned)
+            self.save_to_disk()
         return ids_assigned
 
     def search(self, vector: np.ndarray, top_k: int = 5) -> list[tuple[int, float]]:
@@ -108,6 +109,7 @@ class FAISSRepository(EmbeddingRepository):
             for fid in ids_to_remove:
                 del self._id_map[fid]
             log.info("Removed %d vectors for poi=%s", len(ids_to_remove), poi_id)
+            self.save_to_disk()
 
     def get_poi_id_for_faiss_id(self, faiss_id: int) -> Optional[str]:
         return self._id_map.get(faiss_id)

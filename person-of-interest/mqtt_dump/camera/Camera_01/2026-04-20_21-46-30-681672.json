@@ -1,0 +1,29 @@
+{
+  "id": "Camera_01",
+  "debug_mac": "b5:c7:7b:3f:4c:a8",
+  "timestamp": "2026-04-20T16:16:30.659Z",
+  "debug_timestamp_end": "2026-04-20T16:16:30.680Z",
+  "debug_processing_time": 0.021218061447143555,
+  "rate": 4.277351426141778,
+  "objects": {
+    "person": [
+      {
+        "category": "person",
+        "confidence": 1.0,
+        "bounding_box_px": {
+          "x": 1582,
+          "y": 560,
+          "width": 116,
+          "height": 336
+        },
+        "metadata": {
+          "object_id": {
+            "label": "",
+            "model_name": ""
+          }
+        },
+        "id": 1
+      }
+    ]
+  }
+}

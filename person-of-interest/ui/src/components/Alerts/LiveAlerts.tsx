@@ -1,12 +1,13 @@
-import { useState } from 'react';
-import type { Alert, TrackingUpdate } from '../../types';
-import { mockAlerts, mockPOIs, mockTrackingUpdates } from '../../mockData';
+import type { TrackingUpdate } from '../../types';
+import { mockTrackingUpdates } from '../../mockData';
+import { useAlertWebSocket } from '../../hooks/useAlertWebSocket';
 import AlertCard from './AlertCard';
 import TrackingPanel from './TrackingPanel';
 import ImagePreviewModal from '../common/ImagePreviewModal';
+import { useState } from 'react';
 
 const LiveAlerts = () => {
-  const [alerts, setAlerts] = useState<Alert[]>(mockAlerts);
+  const { alerts, connected, setAlerts } = useAlertWebSocket();
   const [filterPoi, setFilterPoi] = useState('');
   const [filterCamera, setFilterCamera] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -23,11 +24,7 @@ const LiveAlerts = () => {
     if (track) setActiveTracking(track);
   };
 
-  // Resolve POI primary image for alert card
-  const getPoiPrimaryImage = (poiId: string) => {
-    const poi = mockPOIs.find((p) => p.poi_id === poiId);
-    return poi?.reference_images[0]?.image_path;
-  };
+  const getPoiPrimaryImage = (_poiId: string) => undefined;
 
   const uniquePois = [...new Set(alerts.map((a) => a.poi_id))];
   const uniqueCameras = [...new Set(alerts.map((a) => a.match.camera_id))];
@@ -88,6 +85,10 @@ const LiveAlerts = () => {
               {newCount > 0 && <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">{newCount} new</span>}
             </p>
           </div>
+          <span className={`flex items-center gap-1.5 text-xs font-medium ${connected ? 'text-green-600' : 'text-gray-400'}`}>
+            <span className={`inline-block w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-gray-400'}`} />
+            {connected ? 'Connected' : 'Disconnected'}
+          </span>
         </div>
 
         <div className="space-y-3">

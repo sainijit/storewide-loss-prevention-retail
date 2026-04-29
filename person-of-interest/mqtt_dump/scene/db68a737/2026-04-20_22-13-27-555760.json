@@ -1,0 +1,196 @@
+{
+  "timestamp": "2026-04-20T16:43:27.506Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "ba2d445b-9e00-4298-b91b-85b434da6213",
+      "type": "person",
+      "translation": [
+        5.118668192200101,
+        3.5469817450474452,
+        0.0
+      ],
+      "size": [
+        0.12258274358363064,
+        0.12258274358363064,
+        0.07020057993094778
+      ],
+      "velocity": [
+        0.006237261732069995,
+        -0.001801921779706406,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T16:43:27.491Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 1732.0,
+          "y": 607.0,
+          "width": 20.0,
+          "height": 34.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "4b31adb4-3d34-45d5-8397-a135b1a1f9c1",
+      "type": "person",
+      "translation": [
+        2.3522681088528694,
+        5.59931357976437,
+        0.0
+      ],
+      "size": [
+        0.5226499954043589,
+        0.5226499954043589,
+        0.384378389882869
+      ],
+      "velocity": [
+        -0.0028580366071883604,
+        0.01588683690589563,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_02"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T16:43:24.346Z",
+      "camera_bounds": {
+        "Camera_02": {
+          "x": 1474.0,
+          "y": 489.0,
+          "width": 248.0,
+          "height": 266.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "543ca4fd-f39e-468b-b0cd-4b2fb5e9b663",
+      "type": "person",
+      "translation": [
+        2.0779728150572128,
+        4.39762831966074,
+        0.0
+      ],
+      "size": [
+        0.311171688498058,
+        0.311171688498058,
+        0.24818989862686477
+      ],
+      "velocity": [
+        0.011641712424760404,
+        -0.1827715172569673,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_02"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T16:43:23.883Z",
+      "camera_bounds": {
+        "Camera_02": {
+          "x": 1363.0,
+          "y": 691.0,
+          "width": 148.0,
+          "height": 172.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "ff7d52ef-cb0d-4a88-9df1-758bc7aa776c",
+      "type": "person",
+      "translation": [
+        4.541865359522639,
+        4.8351901602795815,
+        -5.5972003219074856e-21
+      ],
+      "size": [
+        0.55960597458993,
+        0.55960597458993,
+        0.5333224735023481
+      ],
+      "velocity": [
+        -0.021554477133556463,
+        -0.01010922804186841,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": 0.0,
+      "first_seen": "2026-04-20T16:43:11.139Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 1604.0,
+          "y": 602.0,
+          "width": 166.0,
+          "height": 396.0
+        }
+      }
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 9.1,
+  "rate": {
+    "Camera_02": 4.011887273107536,
+    "Camera_01": 5.7066443508034475
+  }
+}

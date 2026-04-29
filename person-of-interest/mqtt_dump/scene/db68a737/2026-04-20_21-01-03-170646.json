@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T15:31:03.061Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "dd7210bc-fd66-4965-8c01-fe681f588e79",
+      "type": "person",
+      "translation": [
+        6.243607405604275,
+        6.2933944847534065,
+        -2.425415440080224e-23
+      ],
+      "size": [
+        0.22258777505919713,
+        0.22258777505919713,
+        0.23328829277264335
+      ],
+      "velocity": [
+        0.19268456832152664,
+        0.5336739275571192,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T15:31:00.730Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 926.0,
+          "y": 504.0,
+          "width": 86.0,
+          "height": 126.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "a7624580-cecc-4d47-9480-bb093d320cd7",
+      "type": "person",
+      "translation": [
+        5.732941522702515,
+        7.677374138489395,
+        -1.2069271451745875e-20
+      ],
+      "size": [
+        0.5588332995155074,
+        0.5588332995155074,
+        0.7304675940121694
+      ],
+      "velocity": [
+        0.34830879593954833,
+        0.7409960045068822,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": 0.0,
+      "first_seen": "2026-04-20T15:30:53.526Z",
+      "camera_bounds": {}
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 8.6,
+  "rate": {
+    "Camera_02": 4.134716911829964,
+    "Camera_01": 4.381211068190788
+  }
+}

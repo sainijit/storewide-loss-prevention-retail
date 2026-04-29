@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T16:15:49.645Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "a7624580-cecc-4d47-9480-bb093d320cd7",
+      "type": "person",
+      "translation": [
+        5.649881236249254,
+        7.396350744942943,
+        -8.41947211597375e-20
+      ],
+      "size": [
+        0.5588332995155074,
+        0.5588332995155074,
+        0.7304675940121694
+      ],
+      "velocity": [
+        0.2558060039531895,
+        0.4050610981604022,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": 0.0,
+      "first_seen": "2026-04-20T16:15:36.975Z",
+      "camera_bounds": {}
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "69c8b2ee-cb6e-4fb5-a6f1-9b7014063a5b",
+      "type": "person",
+      "translation": [
+        6.147604664743445,
+        6.232603626068813,
+        5.349401207198778e-22
+      ],
+      "size": [
+        0.22258777505919713,
+        0.22258777505919713,
+        0.23328829277264335
+      ],
+      "velocity": [
+        0.09401050423768853,
+        0.5938804629559452,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T16:15:46.670Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 926.0,
+          "y": 504.0,
+          "width": 86.0,
+          "height": 126.0
+        }
+      }
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 9.6,
+  "rate": {
+    "Camera_02": 4.415533529278957,
+    "Camera_01": 4.4567615143274155
+  }
+}

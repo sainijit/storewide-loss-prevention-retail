@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import ssl
-import threading
 from typing import Callable, Optional
 
 import paho.mqtt.client as mqtt
@@ -14,13 +14,29 @@ from backend.core.config import get_config
 
 log = logging.getLogger("poi.mqtt")
 
+# Primary camera topic: scenescape/data/camera/{camera_id}
+# Contains face sub_objects with face-reidentification-retail-0095 embeddings
+# — same embedding space as POI enrollment model.
+_CAMERA_TOPIC_RE = re.compile(r"scenescape/data/camera/[^/]+$")
+
+# External scene topic: scenescape/external/{scene_id}/person
+# Carries global UUID, reid_state, and body-reid embeddings (person-reidentification-retail-0277).
+# Body embeddings are a DIFFERENT space from face enrollment — used for monitoring only.
+_EXTERNAL_TOPIC_RE = re.compile(r"scenescape/external/[^/]+/person$")
+_EXTERNAL_TOPIC = "scenescape/external/+/person"
+
+# Regulated scene topic: scenescape/regulated/scene/{scene_id}  — region entry/exit
+_REGULATED_TOPIC_RE = re.compile(r"scenescape/regulated/scene/[^/]+$")
+_REGULATED_TOPIC = "scenescape/regulated/scene/+"
+
 
 class MQTTAdapter:
     """Adapter Pattern — wraps paho-mqtt to subscribe to SceneScape events."""
 
-    def __init__(self, on_event: Callable[[str, dict], None]) -> None:
+    def __init__(self, on_event: Callable[[str, dict], None], on_region_event: Optional[Callable[[str, dict], None]] = None) -> None:
         self._cfg = get_config()
         self._on_event = on_event
+        self._on_region_event = on_region_event
         self._client: Optional[mqtt.Client] = None
         self._running = False
 
@@ -53,9 +69,21 @@ class MQTTAdapter:
 
     def _on_connect(self, client, userdata, flags, rc, properties=None) -> None:
         if rc == 0:
-            topic = self._cfg.mqtt_topic_event
-            client.subscribe(topic)
-            log.info("MQTT connected, subscribed to %s", topic)
+            # Subscribe to camera topic — face sub_objects have face-reid embeddings
+            # (same model/space as enrollment) → primary source for FAISS matching
+            camera_topic = self._cfg.mqtt_topic_event
+            if camera_topic:
+                client.subscribe(camera_topic)
+                log.info("MQTT connected, subscribed to camera topic: %s", camera_topic)
+
+            # Subscribe to external topic for monitoring (reid_state, UUIDs)
+            client.subscribe(_EXTERNAL_TOPIC)
+            log.info("MQTT subscribed to external topic (monitoring): %s", _EXTERNAL_TOPIC)
+
+            # Subscribe to regulated scene topic for region entry/exit tracking
+            if self._on_region_event is not None:
+                client.subscribe(_REGULATED_TOPIC)
+                log.info("MQTT subscribed to regulated scene topic: %s", _REGULATED_TOPIC)
         else:
             log.error("MQTT connection failed: rc=%s", rc)
 
@@ -64,7 +92,10 @@ class MQTTAdapter:
             return
         try:
             payload = json.loads(msg.payload)
-            self._on_event(msg.topic, payload)
+            if self._on_region_event is not None and _REGULATED_TOPIC_RE.match(msg.topic):
+                self._on_region_event(msg.topic, payload)
+            elif _EXTERNAL_TOPIC_RE.match(msg.topic) or _CAMERA_TOPIC_RE.match(msg.topic):
+                self._on_event(msg.topic, payload)
         except json.JSONDecodeError:
             log.warning("Invalid JSON on %s", msg.topic)
         except Exception:

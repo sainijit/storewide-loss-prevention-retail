@@ -54,6 +54,32 @@ init-volumes:
 	@docker run --rm -v storewide-lp_vol-media:/data alpine:3.23 sh -c "chown 1000:1000 /data && touch /data/placeholder"
 	@echo "Volumes initialized."
 
+# ---- Load local SceneScape images from reid-drop ----
+# Use after receiving a reid-drop.tar containing updated controller/manager images.
+# The loaded images are tagged scenescape-controller:latest / scenescape-manager:latest.
+# To use them, set in docker/.env:
+#   SCENESCAPE_CONTROLLER_IMAGE=scenescape-controller
+#   SCENESCAPE_MANAGER_IMAGE=scenescape-manager
+#   SCENESCAPE_VERSION=latest
+
+REID_DROP_DIR ?= $(SCENESCAPE_DIR)/../reid-drop
+
+.PHONY: load-images
+load-images:
+	@echo "=== Loading SceneScape images from $(REID_DROP_DIR) ==="
+	@test -f "$(REID_DROP_DIR)/scenescape-controller.tar" || { echo "ERROR: $(REID_DROP_DIR)/scenescape-controller.tar not found"; exit 1; }
+	@test -f "$(REID_DROP_DIR)/scenescape-manager.tar"    || { echo "ERROR: $(REID_DROP_DIR)/scenescape-manager.tar not found"; exit 1; }
+	docker load < "$(REID_DROP_DIR)/scenescape-controller.tar"
+	docker load < "$(REID_DROP_DIR)/scenescape-manager.tar"
+	@echo "=== Images loaded ==="
+	@echo "  scenescape-controller:latest"
+	@echo "  scenescape-manager:latest"
+	@echo ""
+	@echo "To use these images, add to docker/.env:"
+	@echo "  SCENESCAPE_CONTROLLER_IMAGE=scenescape-controller"
+	@echo "  SCENESCAPE_MANAGER_IMAGE=scenescape-manager"
+	@echo "  SCENESCAPE_VERSION=latest"
+
 # ---- Start SceneScape ----
 
 .PHONY: run

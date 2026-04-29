@@ -1,0 +1,104 @@
+{
+  "timestamp": "2026-04-20T15:55:05.975Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "bd10c2f9-1f6a-429c-a780-2f8d78b969ba",
+      "type": "person",
+      "translation": [
+        2.4443006860523386,
+        5.377079980912755,
+        0.0
+      ],
+      "size": [
+        0.1812460016866866,
+        0.1812460016866866,
+        0.2716835985166033
+      ],
+      "velocity": [
+        -0.08240141928708333,
+        0.04052597896519426,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_02"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T15:55:05.109Z",
+      "camera_bounds": {
+        "Camera_02": {
+          "x": 1671.0,
+          "y": 592.0,
+          "width": 86.0,
+          "height": 188.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "75a3a8eb-a08c-404e-a404-9168734f60e5",
+      "type": "person",
+      "translation": [
+        5.219299206855785,
+        5.204405561406004,
+        0.0
+      ],
+      "size": [
+        0.41453073231914406,
+        0.41453073231914406,
+        0.5716532408950734
+      ],
+      "velocity": [
+        0.29516947955342143,
+        0.1863074390259307,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T15:54:58.333Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 1450.0,
+          "y": 488.0,
+          "width": 122.0,
+          "height": 362.0
+        }
+      }
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 8.8,
+  "rate": {
+    "Camera_02": 4.24961042801878,
+    "Camera_01": 4.61637299507965
+  }
+}

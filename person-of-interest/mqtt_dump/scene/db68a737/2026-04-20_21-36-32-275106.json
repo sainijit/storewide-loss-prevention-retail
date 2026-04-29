@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T16:06:32.226Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "6233b182-1aa6-4060-991d-6526e82fed63",
+      "type": "person",
+      "translation": [
+        6.587354837575775,
+        6.791636494040175,
+        -1.375406407839174e-17
+      ],
+      "size": [
+        0.26249834420880536,
+        0.26249834420880536,
+        0.28678431426279793
+      ],
+      "velocity": [
+        0.016160894732319686,
+        0.0048529018934438724,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T16:06:30.355Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 679.0,
+          "y": 461.0,
+          "width": 124.0,
+          "height": 170.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "477b6218-f6f1-45f7-8e79-9d18241a6d3f",
+      "type": "person",
+      "translation": [
+        5.69782015302783,
+        7.662313696586901,
+        1.715621913787047e-19
+      ],
+      "size": [
+        0.6002344787338014,
+        0.6002344787338014,
+        0.7274419955224143
+      ],
+      "velocity": [
+        0.29256430391131266,
+        0.733122028538093,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": null,
+      "first_seen": "2026-04-20T16:06:19.607Z",
+      "camera_bounds": {}
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 8.8,
+  "rate": {
+    "Camera_02": 4.208095060811356,
+    "Camera_01": 4.38286587570001
+  }
+}

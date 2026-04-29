@@ -7,6 +7,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
+from backend.core.config import get_config
 from backend.domain.entities.match_result import AlertPayload, MatchResult
 from backend.domain.interfaces.alert import AlertStrategy
 from backend.domain.interfaces.repository import EventRepository, POIRepository
@@ -33,6 +34,7 @@ class AlertService:
         self._event_repo = event_repo
         self._poi_repo = poi_repo
         self._event_bus = event_bus
+        self._cfg = get_config()
 
         # Register as observer
         self._event_bus.subscribe("match_found", self._on_match_found)
@@ -52,9 +54,9 @@ class AlertService:
             except Exception:
                 log.exception("Failed to dispatch alert via %s", strategy.name())
 
-        # Store alert and mark as sent
+        # Store alert and mark as sent (dedup TTL from config)
         self._event_repo.store_alert(event.alert.to_dict())
-        self._event_repo.mark_alert_sent(event.object_id)
+        self._event_repo.mark_alert_sent(event.object_id, ttl=self._cfg.alert_dedup_ttl)
 
     def create_alert_payload(
         self,
@@ -65,6 +67,7 @@ class AlertService:
         region_name: str,
         confidence: float,
         center_of_mass: Optional[dict] = None,
+        thumbnail_path: str = "",
     ) -> AlertPayload:
         """Build an AlertPayload from a match result."""
         poi = self._poi_repo.get(match.poi_id)
@@ -82,7 +85,8 @@ class AlertService:
             y = int(center_of_mass.get("y", 0))
             w = int(center_of_mass.get("width", 0))
             h = int(center_of_mass.get("height", 0))
-            bbox = [x - w // 2, y - h // 2, x + w // 2, y + h // 2]
+            # bounding_box_px uses top-left origin: [x1, y1, x2, y2]
+            bbox = [x, y, x + w, y + h]
 
         alert_id = f"alert-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}-{match.poi_id}"
 
@@ -97,7 +101,7 @@ class AlertService:
                 "similarity_score": match.similarity_score,
                 "bbox": bbox,
                 "frame_number": 0,
-                "thumbnail_path": "",
+                "thumbnail_path": thumbnail_path,
             },
             poi_metadata={
                 "notes": notes,

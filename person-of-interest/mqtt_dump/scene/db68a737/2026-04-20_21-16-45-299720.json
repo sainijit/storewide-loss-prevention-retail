@@ -1,0 +1,58 @@
+{
+  "timestamp": "2026-04-20T15:46:45.273Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "6df51aed-41f3-4a08-839d-c37726947536",
+      "type": "person",
+      "translation": [
+        4.962632177339102,
+        5.19328827174883,
+        0.0
+      ],
+      "size": [
+        0.357201073149807,
+        0.357201073149807,
+        0.4835056424745094
+      ],
+      "velocity": [
+        0.05595997438889873,
+        0.10048382893286203,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T15:46:37.658Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 1486.0,
+          "y": 581.0,
+          "width": 110.0,
+          "height": 332.0
+        }
+      }
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 8.7,
+  "rate": {
+    "Camera_02": 4.3103003823979344,
+    "Camera_01": 4.768505904607317
+  }
+}

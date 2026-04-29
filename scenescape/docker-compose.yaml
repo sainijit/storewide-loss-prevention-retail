@@ -16,6 +16,7 @@ name: storewide-lp
 
 networks:
   storewide-lp:
+    name: storewide-lp
 
 secrets:
   root-cert:
@@ -58,6 +59,8 @@ services:
     image: eclipse-mosquitto:2.0.22
     ports:
       - "1883:1883"
+      - "1884:1884"
+      - "9001:9001"
     configs:
       - source: mosquitto-secure
         target: /mosquitto/config/mosquitto.conf
@@ -94,7 +97,7 @@ services:
 
   # ---- SceneScape Web / Manager ----
   web:
-    image: ${SCENESCAPE_REGISTRY:-}intel/scenescape-manager:${SCENESCAPE_VERSION:-v2026.0.0}
+    image: ${SCENESCAPE_REGISTRY:-}${SCENESCAPE_MANAGER_IMAGE:-intel/scenescape-manager}:${SCENESCAPE_VERSION:-v2026.0.0}
     init: true
     networks:
       storewide-lp:
@@ -106,10 +109,12 @@ services:
       broker:
         condition: service_started
     ports:
-      - "443:443"
+      - "8443:443"
     command: >
       webserver
+      --dbhost pgserver
       --dbtype postgres
+      --dbport 5432
       --broker broker.scenescape.intel.com
       --brokerauth /run/secrets/browser.auth
       --brokerrootcert /run/secrets/certs/scenescape-ca.pem
@@ -178,7 +183,7 @@ services:
 
   # ---- SceneScape Controller (tracking + analytics) ----
   scene:
-    image: ${SCENESCAPE_REGISTRY:-}intel/scenescape-controller:${SCENESCAPE_VERSION:-v2026.0.0}
+    image: ${SCENESCAPE_REGISTRY:-}${SCENESCAPE_CONTROLLER_IMAGE:-intel/scenescape-controller}:${SCENESCAPE_VERSION:-v2026.0.0}
     init: true
     user: "${UID:-1000}:${GID:-1000}"
     networks:
@@ -263,9 +268,24 @@ services:
   lp-cams:
     image: linuxserver/ffmpeg:version-8.0-cli
     command: >
-      -nostdin -re -stream_loop -1 -i /workspace/media/${VIDEO_FILE:-lp-camera1-720p.mp4}
+      -nostdin -re -stream_loop -1 -i /workspace/media/${VIDEO_FILE:-Camera_01.mp4}
       -c:v copy -an
-      -f rtsp -rtsp_transport tcp rtsp://mediaserver:8554/${CAMERA_NAME:-lp-camera1-720p}
+      -f rtsp -rtsp_transport tcp rtsp://mediaserver:8554/${CAMERA_NAME:-Camera_01}
+    volumes:
+      - vol-sample-data:/workspace/media
+    networks:
+      storewide-lp:
+    depends_on:
+      - mediaserver
+    restart: always
+    pids_limit: 1000
+
+  lp-cams-2:
+    image: linuxserver/ffmpeg:version-8.0-cli
+    command: >
+      -nostdin -re -stream_loop -1 -i /workspace/media/${VIDEO_FILE_2:-Camera_02.mp4}
+      -c:v copy -an
+      -f rtsp -rtsp_transport tcp rtsp://mediaserver:8554/${CAMERA_NAME_2:-Camera_02}
     volumes:
       - vol-sample-data:/workspace/media
     networks:
@@ -338,6 +358,63 @@ services:
     restart: always
     pids_limit: 1000
 
+  # ---- DLStreamer Pipeline Server — Camera 02 ----
+  lp-video-2:
+    image: docker.io/intel/dlstreamer-pipeline-server:${DLSTREAMER_VERSION:-2026.1.0-20260331-weekly-ubuntu24}
+    networks:
+      storewide-lp:
+    tty: true
+    entrypoint: ["./run.sh"]
+    group_add:
+      - "109"
+      - "110"
+      - "992"
+    device_cgroup_rules:
+      - "c 189:* rmw"
+      - "c 209:* rmw"
+      - "a 189:* rwm"
+    depends_on:
+      broker:
+        condition: service_started
+      ntpserv:
+        condition: service_started
+      lp-cams-2:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-I", "-s", "http://localhost:8080/pipelines"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    environment:
+      - RUN_MODE=EVA
+      - GENICAM=Balluff
+      - GST_DEBUG=1,gencamsrc:2
+      - ADD_UTCTIME_TO_METADATA=true
+      - APPEND_PIPELINE_NAME_TO_PUBLISHER_TOPIC=false
+      - MQTT_HOST=broker.scenescape.intel.com
+      - MQTT_PORT=1883
+      - REST_SERVER_PORT=8080
+      - HTTPS_PROXY=${HTTPS_PROXY}
+      - https_proxy=${https_proxy}
+      - HTTP_PROXY=${HTTP_PROXY}
+      - http_proxy=${http_proxy}
+      - NO_PROXY=mediaserver,${NO_PROXY}
+      - no_proxy=mediaserver,${no_proxy}
+    configs:
+      - source: lp-config-2
+        target: /home/pipeline-server/config.json
+    volumes:
+      - ../scenescape/dlstreamer-pipeline-server/user_scripts:/home/pipeline-server/user_scripts
+      - vol-dlstreamer-pipeline-root-2:/var/cache/pipeline_root:uid=1999,gid=1999
+      - vol-sample-data:/home/pipeline-server/videos
+      - vol-models:/home/pipeline-server/models
+    secrets:
+      - source: root-cert
+        target: certs/scenescape-ca.pem
+    restart: always
+    pids_limit: 1000
+
 # =========================================================================
 #  Configs (bind-mounted JSON files)
 # =========================================================================
@@ -346,10 +423,14 @@ configs:
     file: ../scenescape/mosquitto/mosquitto-secure.conf
   tracker-config:
     file: ../scenescape/controller/tracker-config.json
+  tracker-config-time-chunking:
+    file: ../scenescape/controller/tracker-config-time-chunking.json
   reid-config:
     file: ../scenescape/controller/reid-config.json
   lp-config:
     file: ${PIPELINE_CONFIG:-../scenescape/dlstreamer-pipeline-server/config.json}
+  lp-config-2:
+    file: ${PIPELINE_CONFIG_2:-../scenescape/dlstreamer-pipeline-server/config-camera2.json}
 
 # =========================================================================
 #  Volumes
@@ -361,6 +442,11 @@ volumes:
   vol-sample-data:
   vol-models:
   vol-dlstreamer-pipeline-root:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+  vol-dlstreamer-pipeline-root-2:
     driver: local
     driver_opts:
       type: tmpfs

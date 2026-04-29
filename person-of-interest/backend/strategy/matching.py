@@ -28,8 +28,11 @@ class CosineSimilarityStrategy(MatchingStrategy):
         for faiss_id, distance in results:
             # Inner product of L2-normed vectors = cosine similarity ∈ [-1, 1]
             similarity = float(distance)
+            poi_id = self._faiss.get_poi_id_for_faiss_id(faiss_id)
+            log.info("FAISS result: poi=%s similarity=%.4f threshold=%.2f %s",
+                     poi_id or faiss_id, similarity, threshold,
+                     "MATCH" if similarity >= threshold else "below-threshold")
             if similarity >= threshold:
-                poi_id = self._faiss.get_poi_id_for_faiss_id(faiss_id)
                 if poi_id:
                     matches.append(
                         MatchResult(

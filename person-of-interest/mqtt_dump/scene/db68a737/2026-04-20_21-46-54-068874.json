@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T16:16:54.037Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "ff7d52ef-cb0d-4a88-9df1-758bc7aa776c",
+      "type": "person",
+      "translation": [
+        5.654724912343694,
+        7.631087709397788,
+        -6.741968215673589e-21
+      ],
+      "size": [
+        0.5983657901145705,
+        0.5983657901145705,
+        0.7712586389107907
+      ],
+      "velocity": [
+        0.1342065757941904,
+        0.35520333064469356,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": 0.0,
+      "first_seen": "2026-04-20T16:16:47.506Z",
+      "camera_bounds": {}
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "3fbf5be3-ce90-42c8-9495-6cc601cadb08",
+      "type": "person",
+      "translation": [
+        6.87211227958905,
+        7.457703888355718,
+        -7.366513189896407e-21
+      ],
+      "size": [
+        0.3306914360731108,
+        0.3306914360731108,
+        0.3419094433856397
+      ],
+      "velocity": [
+        -0.5998679780464435,
+        0.07960120315256002,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T16:16:53.120Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 484.0,
+          "y": 307.0,
+          "width": 164.0,
+          "height": 200.0
+        }
+      }
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 11.3,
+  "rate": {
+    "Camera_02": 4.011688044372635,
+    "Camera_01": 6.214758960017009
+  }
+}

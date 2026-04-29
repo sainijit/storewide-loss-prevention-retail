@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T16:36:41.988Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "9eb235be-5c26-4efc-827e-d5060f698e3d",
+      "type": "person",
+      "translation": [
+        6.759251491609658,
+        6.738960075563484,
+        -8.540370014764748e-26
+      ],
+      "size": [
+        0.23884331172580087,
+        0.23884331172580087,
+        0.26382206940116426
+      ],
+      "velocity": [
+        0.012334493202424295,
+        0.03003343085141834,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T16:36:41.564Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 732.0,
+          "y": 396.0,
+          "width": 100.0,
+          "height": 138.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "ff7d52ef-cb0d-4a88-9df1-758bc7aa776c",
+      "type": "person",
+      "translation": [
+        5.476496997296201,
+        7.387525607851758,
+        -1.6044311446779438e-19
+      ],
+      "size": [
+        0.618699395670621,
+        0.618699395670621,
+        0.8281983592854641
+      ],
+      "velocity": [
+        0.2399110876999978,
+        0.591822435049932,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": 0.0,
+      "first_seen": "2026-04-20T16:36:38.030Z",
+      "camera_bounds": {}
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 8.7,
+  "rate": {
+    "Camera_02": 4.196219430718082,
+    "Camera_01": 4.504126039554878
+  }
+}

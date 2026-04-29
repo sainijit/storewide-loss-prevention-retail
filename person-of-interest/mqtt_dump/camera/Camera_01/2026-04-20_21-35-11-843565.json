@@ -1,0 +1,33 @@
+{
+  "id": "Camera_01",
+  "debug_mac": "b5:c7:7b:3f:4c:a8",
+  "timestamp": "2026-04-20T16:05:11.670Z",
+  "debug_timestamp_end": "2026-04-20T16:05:11.841Z",
+  "debug_processing_time": 0.17174959182739258,
+  "rate": 14.688209554521242,
+  "objects": {
+    "person": [
+      {
+        "category": "person",
+        "confidence": 0.9937031865119934,
+        "bounding_box_px": {
+          "x": 1781,
+          "y": 580,
+          "width": 138,
+          "height": 367
+        },
+        "metadata": {
+          "object_id": {
+            "label": "",
+            "model_name": ""
+          },
+          "reid": {
+            "embedding_vector": "PXUXPZ9PF74ke0K8brrUvoe3771PgRO9vd0jPyzGKb5J3+48NJurPQHhBz5op7E+N0aNPrMGhD3VHTS+zPFPvusfuDxPWH6+gumQP2VVhT9xKMI78PEJvwwnJT3RO7S9g6bZPg/kkb5V/su+vCwdvicjlz7755S9TK4PvpNToL7rcIi+ELIjPqc3bb4crpg95voAP62Mwb2PZ6G+c4k2v8PwYD4N2Q2+jKrvvoGAFj5EKjs+Zsp9PuKL2r1vsVe+jwGwPmaXyj6QczK+z9YPP3a9z751AyM9/3ykPk4gkbvawl2/SHhPPUdgYr2XwZw/e26XvrIWq72HUQc/a0vsPhh72z0Oyxa/fq6wvkD37Tz5eq4+Cff2vnU5ab9SfQC/6YDcvslJ7z4uiyk+i8ejvomFTT6Fh5W+ocBKP04sk7yM4vQ+CKImvh6QzL4O0Nc+8qS9PjpsWL9ifbA9PvEEvtNisj4gV4M+ItmsPhqxUr2QwjW/bbnFvufGhj/T7xK/vmYbviPfpL1K0WY+/LGgPlUAFb9aCzm8jSAKvqjHET9NGjK7cgFrvrnXiL487NA+HbYoPnzDjj45iqY+7ZTzPS15tr7ilES+6sAHv0Gjez2Kx76+1brLvbV54T5BrLu+8RYEP55/+r3eCAo9ponbvkVaLb/glkM7cLsbv5e5br5DPd0+GzwYPndC8z7ZtTA/T2FdvkHuvr4S8649+1JWPgCn3j4y5Cc/kkL6Ph5CMj/MKdu+s6Y5vyx44D5h18W9mLiivsSDXb4WAo2+3U+lvSEiWL48Mwk9gUd8Pjtpb75Z7ta+FNIUPeraYj+ZtSI/gtu1vsXKXb+Cy5S+Z10oPsdzzr4OrDU/vV0PvxSPtr5bY/m+jXMbvw9ERD/Q1lk/5B7nvhkQvrz53iK9Dz0JPn40Ur79kIe+63r7vqQkyb47ZH6/mX5Xv6xWKb5Z53I+NxW5PghlFj5XrF89YEe/OigJrD6afHw+j9qwvgwDCz7eUNe+ZylovnM1KT7zTca9v9+OPnlctb7c3g+/sqKsvswMzD7+4Cu+MOvZvtuu4j+RfY+9kmAHPyz9sT1FBiI/38CuPupUpT48hM++ND05vr0tdD/Psle9O28JvNpYZjzHFCg+o5pMPyY7s76CGcq8vMNiviZJyz0NluO92umvvdOWAz4fpR2+AQUoPxsmML+Wvek8KTpWvp2CCD7R6+m+XKa9PDhlZT7Nf2y+NRgJPh7E5zz/MJs+/c6wPJaKwz3+ztm+MJcLv2r5Hz8SsT2+U4QIPJTM/T0p8IO+FBMQvvfy/T6pkJ0+NbMuv5BGV75tdq6+eK5xvkNHHL9rnD473i8xP4nXMT5XC0G+gWixvQ==",
+            "model_name": "torch-jit-export"
+          }
+        },
+        "id": 1
+      }
+    ]
+  }
+}

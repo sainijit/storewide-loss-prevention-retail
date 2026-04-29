@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T16:37:08.162Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "a7624580-cecc-4d47-9480-bb093d320cd7",
+      "type": "person",
+      "translation": [
+        4.220096270624383,
+        4.586053448463851,
+        -9.79176930644002e-21
+      ],
+      "size": [
+        0.5606837145440462,
+        0.5606837145440462,
+        0.6059293532274959
+      ],
+      "velocity": [
+        -0.14128334612046925,
+        -0.16080587560755955,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": 0.0,
+      "first_seen": "2026-04-20T16:36:54.901Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 1752.0,
+          "y": 578.0,
+          "width": 152.0,
+          "height": 454.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "03e6e971-eb34-4f38-8dcc-400bb553c09c",
+      "type": "person",
+      "translation": [
+        5.716294173954585,
+        7.584773582050994,
+        5.355616219553205e-23
+      ],
+      "size": [
+        0.4583751840672532,
+        0.4583751840672532,
+        0.6036596762588082
+      ],
+      "velocity": [
+        -0.03246139210047784,
+        0.007479183523914163,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": null,
+      "first_seen": "2026-04-20T16:36:50.759Z",
+      "camera_bounds": {}
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 8.2,
+  "rate": {
+    "Camera_02": 3.3710289941655827,
+    "Camera_01": 6.338620576636444
+  }
+}

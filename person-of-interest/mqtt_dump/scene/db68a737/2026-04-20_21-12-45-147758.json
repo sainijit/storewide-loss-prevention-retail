@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-20T15:42:45.119Z",
+  "objects": [
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "dd69d9a4-0dd7-48ed-bd85-91afe1e69ab8",
+      "type": "person",
+      "translation": [
+        7.107926894789832,
+        7.531695030607388,
+        1.3780594222878634e-21
+      ],
+      "size": [
+        0.3504113623691216,
+        0.3504113623691216,
+        0.35690408076698144
+      ],
+      "velocity": [
+        0.05715125017768595,
+        0.05524531163059847,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [
+        "Camera_01"
+      ],
+      "similarity": null,
+      "first_seen": "2026-04-20T15:42:44.702Z",
+      "camera_bounds": {
+        "Camera_01": {
+          "x": 409.0,
+          "y": 278.0,
+          "width": 182.0,
+          "height": 216.0
+        }
+      }
+    },
+    {
+      "category": "person",
+      "confidence": 1.0,
+      "id": "ff7d52ef-cb0d-4a88-9df1-758bc7aa776c",
+      "type": "person",
+      "translation": [
+        5.774078233091602,
+        7.794482724490559,
+        2.0646096602514668e-17
+      ],
+      "size": [
+        0.671363793119431,
+        0.671363793119431,
+        0.7739560280867637
+      ],
+      "velocity": [
+        0.3532001967119255,
+        0.6646511181705708,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "metadata": {
+        "object_id": {
+          "label": "",
+          "model_name": ""
+        }
+      },
+      "visibility": [],
+      "similarity": 0.0,
+      "first_seen": "2026-04-20T15:42:40.876Z",
+      "camera_bounds": {}
+    }
+  ],
+  "id": "db68a737-92db-4477-880b-07bc7d658ab9",
+  "name": "Office",
+  "scene_rate": 8.5,
+  "rate": {
+    "Camera_02": 4.139935888985907,
+    "Camera_01": 4.359686527751106
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "id": "Camera_01",
+  "debug_mac": "b5:c7:7b:3f:4c:a8",
+  "timestamp": "2026-04-20T14:59:11.185Z",
+  "debug_timestamp_end": "2026-04-20T14:59:11.259Z",
+  "debug_processing_time": 0.07454633712768555,
+  "rate": 4.183679808320264,
+  "objects": {
+    "person": [
+      {
+        "category": "person",
+        "confidence": 0.9967503547668457,
+        "bounding_box_px": {
+          "x": 399,
+          "y": 437,
+          "width": 431,
+          "height": 643
+        },
+        "metadata": {
+          "object_id": {
+            "label": "",
+            "model_name": ""
+          },
+          "reid": {
+            "embedding_vector": "gh2dPkFRs7+W05+9+VZkv9ovnj1vfNM+axX4Pvsaoj7mHCe/tRtovsDcVr50RAE+bQJkP0XZLb84xfO7rfmQPcGwR761i82+SrShPMvLwD2nywY/YpCWPj14lT0Q1mC+lZ0DP44UJ79Fg4S/USo5P8/B870wVPU8Nz0YPi7HGT9Mfne+R7j/vvvlZb4p1uK+mbSivhryP74QhZ4+pJy+vjangz/P9/o+Zmypv8L2fj+s58S9G+CWPuNBCDzgGA4+JXXwPnQeeL6VbFG9+36XvnSMkr5/azE/EaFYvbU1qD77Gh2/UDvKPbnktb0vqQg+A+6dvpfmCr9slhM//ObjPqvgAb0K+xu/dc4Av82f+D78I3I/+06CvU4F+r7ExN6+56Vpv3lURT7aAqg+S24SvyKtbT7TpoC/iTPqPeH58T6LPIg/LgkQPtPbDb774Y4/BOCAPvi33r4uZQE/GkhUPCt3ezxKCCW9ca8yPiMuAL43JHQ8XlrCvyrAKz/4/4O/8cycPhQhCL6iarY9LgBzPrJLHL8Pz5W+j84XPzXjBj9rmZq9oCsvvydaWj4X/gy+1gqGvEi8F7+z0Vc+hrpNPewlaL+L7Ws+SN55v027xz0nCjY+f9dcP7Bj/b4A4gu/9u+hPYA0qL6j3ms9VEv4vvm8W7+zR5M9DxgUv9ZHjz//WoW9FYM9v7YsTD8DPHC+9PklP9xLGD82g+e/8gydPtM44D4ulya9ESjhvuk1nj3LHRE9KpFFvhgQZz/LaO6+2g09vwCjCb27PDO/LQy4vjAl8b7FRhg/P55JP70Fyb7to5i9eUV7PXqnjD9sEQQ/zkIgP633rr5X+jg+bR1avqQZQb7Ti2k/U9OLv66keb6CR5y/yfpqv8+zQj82i0W/x9O6Paa5lz16muy+Ln7avQfH776Iuzu/QSBZu5Lch79GYrG/rm1Uvx1azD1OkL6/4e1kPwa/BT2BXqS9w6kZv10AUD8ZW8S+ar6wPqxjmr5tDaS9k9ZoPm6azr56bSQ/tELvPm1s/r64Uai/rQIVv7/oAb51cZo+5zc5v39CAj85WfU+m0BUP9OAjD9i3tG+w6tFvnCjir16ELu+VfC4Pn6i1z6pPpA/FOQFP7FGpD6AoCs/QcS+PoIUpLv9GE0/PCaJviwIAr9Zt7s+eHDlvlTf6rzqOd8+A4cYPjalpb4A9h+/5CKLvxOMWr7MhqM9GSqJvLVuHr9XVn8+k+Iwvyhvkb7dSbU+feEQv2NX3j41LBK/f/pgv+VVmT+o7je/xDjuvvFxiz6KOPq9h8sPPUYImDve5XU/OW46vvZotr68qZG+Gw0MPywamr3kLlc/Z4BgPwXp+b5YryW/XkeTPQ==",
+            "model_name": "torch-jit-export"
+          }
+        },
+        "id": 1,
+        "sub_objects": {
+          "face": [
+            {
+              "category": "face",
+              "confidence": 0.9895227551460266,
+              "bounding_box_px": {
+                "x": 503,
+                "y": 506,
+                "width": 152,
+                "height": 176
+              },
+              "metadata": {
+                "inference_layer_name:658": {
+                  "label": "",
+                  "model_name": "torch-jit-export"
+                },
+                "object_id": {
+                  "label": "",
+                  "model_name": ""
+                }
+              },
+              "id": 1
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
