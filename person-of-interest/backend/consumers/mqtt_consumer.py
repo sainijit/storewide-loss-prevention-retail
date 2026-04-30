@@ -6,14 +6,18 @@ Primary topic: scenescape/data/camera/{camera_id}
   face-reid embeddings from face-reidentification-retail-0095 — the SAME model used
   during POI enrollment.  Only face sub_object embeddings are used for FAISS matching.
 
-  Dedup key: f"cam:{camera_id}:{person_int_id}" with 60s TTL.
+  Dedup key: f"cam:{camera_id}:{person_int_id}" with object_cache_ttl (default 60s).
+  This camera-local track key is stable for the lifetime of the GStreamer tracker track
+  and gives reliable per-person dedup within a camera view without depending on the
+  external topic's global UUID.
 
 Secondary topic (monitoring only): scenescape/external/{scene_id}/person
   Carries global UUIDs, reid_state, and body-reid embeddings (person-reidentification-
   retail-0277).  Body embeddings are a DIFFERENT embedding space from the face model
   and must NOT be used for FAISS comparison against face-enrolled POIs.
-  External topic is subscribed to for reid_state logging and future cross-camera
-  UUID correlation only.
+  External topic is subscribed to solely for reid:meta observability (MCP tools) and
+  movement event recording.  It no longer controls a gate on FAISS execution — face
+  detections on the camera topic always proceed to FAISS regardless of reid_state.
 
 Embedding space alignment:
   Enrollment (EmbeddingModelFactory):  face-reidentification-retail-0095, 256-dim,
@@ -51,6 +55,10 @@ TOPIC_RE = CAMERA_TOPIC_RE
 
 # Minimum face detection confidence to attempt FAISS matching
 FACE_CONFIDENCE_THRESHOLD = 0.80
+
+# SceneScape reid_state values — kept for logging/observability purposes only.
+# These no longer gate FAISS execution; they are recorded to reid:meta for MCP tools.
+REID_MATCHED_STATES = {"matched", "query_no_match"}
 
 
 def _decode_embedding_b64(b64_str: str) -> Optional[List[float]]:
@@ -190,11 +198,17 @@ class EventConsumer:
                 camera_id, person_int_id, best_face_conf, len(embedding_vector),
             )
 
-            # Use person bounding box for thumbnail crop; fall back to face bbox
-            person_bbox = obj.get("bounding_box_px") or best_face_bbox
-
-            # Stable dedup key within a camera session
+            # Use a stable camera-local track key for dedup.
+            # MatchingService cache-aside handles alert suppression (object_cache_ttl).
+            # The external topic global UUID is NOT used here — per-camera tracking
+            # is both correct and avoids the multi-person / timing-race problems of
+            # a camera→UUID map.
             object_id = f"cam:{camera_id}:{person_int_id}"
+
+            # For thumbnail: use person bbox (wider) rather than face bbox to tolerate
+            # timing drift between MQTT detection frame and RTSP grabber frame.
+            # Face bbox is only ~30-50px and any movement causes a miss-crop.
+            person_bbox = obj.get("bounding_box_px") or best_face_bbox
 
             self._run_matching(
                 object_id=object_id,
@@ -241,10 +255,24 @@ class EventConsumer:
             reid_state = obj.get("reid_state", "")
             visibility = obj.get("visibility", [])
             camera_id = visibility[0] if visibility else scene_name
+
+            if self._event_repo:
+                # Store reid metadata for observability (MCP tools, match enrichment).
+                # This is NOT a gate — the camera topic handler no longer checks this.
+                meta = {
+                    "global_uuid": object_id,
+                    "reid_state": reid_state,
+                    "camera_id": camera_id,
+                    "timestamp": timestamp,
+                    "similarity": obj.get("similarity"),
+                    "first_seen": obj.get("first_seen"),
+                }
+                self._event_repo.set_reid_meta(object_id, meta)
             log.debug(
-                "External topic: uuid=%s reid_state=%r camera=%s (monitoring only)",
-                object_id, reid_state, camera_id,
+                "External topic: uuid=%s reid_state=%r camera=%s visibility=%s",
+                object_id, reid_state, camera_id, visibility,
             )
+
             self._events.store_movement(
                 object_id=object_id,
                 timestamp=timestamp,
@@ -283,6 +311,30 @@ class EventConsumer:
             match.poi_id, object_id, display_camera, match.similarity_score,
         )
 
+        # Write match metadata to Redis (accessible via API / MCP tools)
+        if self._event_repo:
+            match_meta = {
+                "object_id": object_id,
+                "poi_id": match.poi_id,
+                "similarity_score": round(match.similarity_score, 4),
+                "camera_id": display_camera,
+                "timestamp": timestamp,
+                "confidence": round(confidence, 4),
+            }
+            # Attach global reid metadata if available
+            reid_meta_raw = None
+            try:
+                import json as _json
+                _raw = self._event_repo._r.get(f"reid:meta:{object_id}")  # type: ignore[attr-defined]
+                if _raw:
+                    reid_meta_raw = _json.loads(_raw)
+            except Exception:
+                pass
+            if reid_meta_raw:
+                match_meta["reid"] = reid_meta_raw
+            self._event_repo.set_match_metadata(object_id, match_meta, ttl=3600)
+            log.debug("Match metadata written to Redis for uuid=%s", object_id)
+
         # Capture thumbnail from RTSP — only when we have a valid camera_id
         thumbnail_path = ""
         if camera_id and self._event_repo and self._event_repo.claim_thumbnail(object_id, ttl=30):
@@ -313,13 +365,14 @@ class EventConsumer:
             thumbnail_path=thumbnail_path,
         )
 
-        # Update movement event with the matched poi_id
+        # Update movement event with the matched poi_id and thumbnail
         self._events.store_movement(
             object_id=object_id,
             timestamp=timestamp,
             camera_id=display_camera,
             region=display_camera,
             poi_id=match.poi_id,
+            thumbnail_path=thumbnail_path or None,
         )
 
         self._event_bus.publish("match_found", MatchFoundEvent(

@@ -58,8 +58,16 @@ class CacheRepository(ABC):
     @abstractmethod
     def get_poi_for_object(self, object_id: str) -> Optional[str]: ...
 
+    def get_similarity_for_object(self, object_id: str) -> Optional[float]:
+        """Return the cached similarity score, or None if not stored."""
+        return None
+
     @abstractmethod
-    def set_poi_for_object(self, object_id: str, poi_id: str, ttl: int = 300) -> None: ...
+    def set_poi_for_object(self, object_id: str, poi_id: str, ttl: int = 300, similarity: float = 0.0) -> None: ...
+
+    def delete_object(self, object_id: str) -> None:
+        """Evict a cache entry. Default no-op; override in concrete implementations."""
+        pass
 
 
 class EventRepository(ABC):
@@ -103,7 +111,27 @@ class EventRepository(ABC):
     def delete_region_presence(self, object_id: str, scene_id: str, region_id: str) -> None: ...
 
     @abstractmethod
-    def store_region_dwell(self, object_id: str, timestamp: str, scene_id: str, region_id: str, region_name: str, dwell_sec: Optional[float] = None) -> None: ...
+    def store_region_dwell(self, object_id: str, timestamp: str, scene_id: str, region_id: str, region_name: str,
+                           dwell_sec: Optional[float] = None, entry_time: Optional[str] = None,
+                           camera_id: Optional[str] = None) -> None: ...
+
+    def get_region_dwells_for_object(self, object_id: str, date_filter: Optional[str] = None) -> list[dict]:
+        """Return region dwell records for an object, optionally filtered by date."""
+        return []
+
+    def set_reid_matched(self, camera_id: str, global_uuid: str, metadata: dict, ttl: int = 15) -> None:
+        """Store SceneScape reid_state=matched signal for a camera (with TTL)."""
+
+    def get_reid_matched_uuid(self, camera_id: str) -> Optional[str]:
+        """Return the current matched global UUID for a camera, or None if no recent signal."""
+        return None
+
+    def set_match_metadata(self, object_id: str, metadata: dict, ttl: int = 3600) -> None:
+        """Persist reid/match metadata for a matched object."""
+
+    def get_match_metadata(self, object_id: str) -> Optional[dict]:
+        """Retrieve stored match metadata for an object."""
+        return None
 
 
 class EmbeddingMappingRepository(ABC):

@@ -44,9 +44,10 @@ class MovementEvent:
     region: str
     poi_id: Optional[str] = None
     embedding_reference: Optional[str] = None
+    thumbnail_path: Optional[str] = None
 
     def to_dict(self) -> dict:
-        return {
+        d = {
             "object_id": self.object_id,
             "timestamp": self.timestamp,
             "camera_id": self.camera_id,
@@ -54,3 +55,6 @@ class MovementEvent:
             "poi_id": self.poi_id,
             "embedding_reference": self.embedding_reference,
         }
+        if self.thumbnail_path:
+            d["thumbnail_path"] = self.thumbnail_path
+        return d

@@ -92,10 +92,33 @@ class RedisCacheRepository(CacheRepository):
         self._r = RedisClient().client
 
     def get_poi_for_object(self, object_id: str) -> Optional[str]:
-        return self._r.get(f"{self.PREFIX}{object_id}")
+        raw = self._r.get(f"{self.PREFIX}{object_id}")
+        if raw is None:
+            return None
+        # Support both legacy plain string and new "poi_id:similarity" format
+        if b":" in raw if isinstance(raw, bytes) else ":" in raw:
+            parts = raw.decode() if isinstance(raw, bytes) else raw
+            return parts.split(":", 1)[0]
+        return raw.decode() if isinstance(raw, bytes) else raw
 
-    def set_poi_for_object(self, object_id: str, poi_id: str, ttl: int = 300) -> None:
-        self._r.setex(f"{self.PREFIX}{object_id}", ttl, poi_id)
+    def get_similarity_for_object(self, object_id: str) -> Optional[float]:
+        """Return the cached similarity score for object_id, or None."""
+        raw = self._r.get(f"{self.PREFIX}{object_id}")
+        if raw is None:
+            return None
+        parts = raw.decode() if isinstance(raw, bytes) else raw
+        if ":" in parts:
+            try:
+                return float(parts.split(":", 1)[1])
+            except ValueError:
+                return None
+        return None
+
+    def set_poi_for_object(self, object_id: str, poi_id: str, ttl: int = 300, similarity: float = 0.0) -> None:
+        self._r.setex(f"{self.PREFIX}{object_id}", ttl, f"{poi_id}:{similarity}")
+
+    def delete_object(self, object_id: str) -> None:
+        self._r.delete(f"{self.PREFIX}{object_id}")
 
 
 class RedisEventRepository(EventRepository):
@@ -145,6 +168,21 @@ class RedisEventRepository(EventRepository):
         raw_list = self._r.lrange("alerts:recent", 0, limit - 1)
         return [json.loads(r) for r in raw_list]
 
+    def clear_alerts(self) -> int:
+        """Delete all alert records and the recent-alerts list. Returns count deleted."""
+        deleted = 0
+        self._r.delete("alerts:recent")
+        deleted += 1
+        cursor = 0
+        while True:
+            cursor, keys = self._r.scan(cursor, match="alert:*", count=200)
+            if keys:
+                self._r.delete(*keys)
+                deleted += len(keys)
+            if cursor == 0:
+                break
+        return deleted
+
     def is_alert_sent(self, object_id: str) -> bool:
         return self._r.exists(f"alert:sent:{object_id}") > 0
 
@@ -182,7 +220,8 @@ class RedisEventRepository(EventRepository):
         key = f"region:presence:{scene_id}:{region_id}:{object_id}"
         self._r.delete(key)
 
-    def store_region_dwell(self, object_id, timestamp, scene_id, region_id, region_name, dwell_sec=None):
+    def store_region_dwell(self, object_id, timestamp, scene_id, region_id, region_name, dwell_sec=None,
+                           entry_time=None, camera_id=None):
         """Store region dwell record (entry + exit + duration)."""
         import json
         from datetime import datetime, timezone
@@ -193,10 +232,63 @@ class RedisEventRepository(EventRepository):
             "scene_id": scene_id,
             "region_id": region_id,
             "region_name": region_name,
+            "entry_time": entry_time or "",
             "exit_time": timestamp,
             "dwell_sec": dwell_sec,
+            "camera_id": camera_id or "",
         }
         self._r.setex(key, 86400 * 7, json.dumps(data))  # 7 day TTL
+
+    def set_reid_meta(self, global_uuid: str, metadata: dict, ttl: int = 120) -> None:
+        """Store reid metadata for a global UUID (for MCP tool observability)."""
+        self._r.setex(f"reid:meta:{global_uuid}", ttl, json.dumps(metadata))
+
+    def get_region_dwells_for_object(self, object_id: str, date_filter: Optional[str] = None) -> list[dict]:
+        """Return region dwell records for an object, optionally filtered by date.
+
+        Args:
+            object_id: The object ID to look up.
+            date_filter: If provided, only return dwells matching this date (YYYY-MM-DD).
+        """
+        pattern = f"region:dwell:{object_id}:*"
+        keys: list = []
+        cursor = 0
+        while True:
+            cursor, batch = self._r.scan(cursor, match=pattern, count=100)
+            keys.extend(batch)
+            if cursor == 0:
+                break
+        dwells = []
+        for key in keys:
+            raw = self._r.get(key)
+            if raw:
+                dwell = json.loads(raw)
+                if date_filter:
+                    exit_ts = dwell.get("exit_time", "")
+                    dwell_date = exit_ts[:10] if len(exit_ts) >= 10 else ""
+                    if dwell_date != date_filter:
+                        continue
+                dwells.append(dwell)
+        return dwells
+
+    # Kept for backwards-compatibility; no longer called from the consumer.
+    def set_reid_matched(self, camera_id: str, global_uuid: str, metadata: dict, ttl: int = 15) -> None:
+        """Deprecated: use set_reid_meta instead. Writes gate key + meta."""
+        self._r.setex(f"reid:matched:{camera_id}", ttl, global_uuid)
+        self._r.setex(f"reid:meta:{global_uuid}", ttl * 8, json.dumps(metadata))
+
+    def get_reid_matched_uuid(self, camera_id: str) -> Optional[str]:
+        """Deprecated: reid gate removed. Kept for MCP tool compatibility."""
+        val = self._r.get(f"reid:matched:{camera_id}")
+        return val.decode() if isinstance(val, bytes) else val
+
+    def set_match_metadata(self, object_id: str, metadata: dict, ttl: int = 3600) -> None:
+        """Persist FAISS+reid metadata for an object (1h TTL)."""
+        self._r.setex(f"match:meta:{object_id}", ttl, json.dumps(metadata))
+
+    def get_match_metadata(self, object_id: str) -> Optional[dict]:
+        raw = self._r.get(f"match:meta:{object_id}")
+        return json.loads(raw) if raw else None
 
 
 class RedisEmbeddingMappingRepository(EmbeddingMappingRepository):
