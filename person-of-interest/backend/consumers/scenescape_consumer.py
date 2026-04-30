@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import logging
 import re
+import time
 from typing import Dict, Set
 
 from backend.service.event_service import EventService
@@ -38,16 +39,24 @@ class ScenescapeRegionConsumer:
     `regions` dict for the first time, and exit when it disappears.
     """
 
+    # Max age (seconds) before stale entries are evicted from _region_presence
+    _PRESENCE_MAX_AGE = 3600  # 1 hour
+    _EVICTION_INTERVAL = 60  # seconds between eviction sweeps
+
     def __init__(self, event_service: EventService) -> None:
         self._event_service = event_service
-        # {object_id: set of region_ids currently occupied}
+        # {object_id: (set of region_ids, last_seen_timestamp)}
         self._region_presence: Dict[str, Set[str]] = {}
+        self._last_seen: Dict[str, float] = {}
+        self._last_eviction = 0.0
 
     def handle_event(self, topic: str, payload: dict) -> None:
         m = REGION_TOPIC_RE.match(topic)
         if not m:
             log.debug("Topic %s does not match regulated scene pattern, ignoring", topic)
             return
+
+        self._evict_stale()
 
         scene_id = m.group("scene_id")
         timestamp = payload.get("timestamp", "")
@@ -108,11 +117,13 @@ class ScenescapeRegionConsumer:
                     log.exception("Error storing region exit for obj %s region %s", object_id, region_id)
 
             self._region_presence[object_id] = regions_now
+            self._last_seen[object_id] = time.monotonic()
 
         # Clean up presence tracking for objects no longer in scene
         gone_ids = set(self._region_presence.keys()) - current_ids
         for object_id in gone_ids:
             old_regions = self._region_presence.pop(object_id, set())
+            self._last_seen.pop(object_id, None)
             for region_id in old_regions:
                 try:
                     self._event_service.store_region_exit(
@@ -124,3 +135,17 @@ class ScenescapeRegionConsumer:
                     )
                 except Exception:
                     log.exception("Error storing implicit region exit for obj %s", object_id)
+
+    def _evict_stale(self) -> None:
+        """Remove entries older than _PRESENCE_MAX_AGE to prevent unbounded growth."""
+        now = time.monotonic()
+        if now - self._last_eviction < self._EVICTION_INTERVAL:
+            return
+        self._last_eviction = now
+        cutoff = now - self._PRESENCE_MAX_AGE
+        stale = [oid for oid, ts in self._last_seen.items() if ts < cutoff]
+        for oid in stale:
+            self._region_presence.pop(oid, None)
+            self._last_seen.pop(oid, None)
+        if stale:
+            log.info("Evicted %d stale entries from region presence tracker", len(stale))

@@ -31,13 +31,14 @@ class TestMatchingService:
 
     def test_cache_hit(self):
         service, strategy, cache = self._make_service(cached_poi="poi-cached")
+        cache.get_similarity_for_object = MagicMock(return_value=0.92)
         embedding = np.random.randn(256).tolist()
 
         result = service.match_object("obj-1", embedding)
 
         assert result is not None
         assert result.poi_id == "poi-cached"
-        assert result.similarity_score == 1.0
+        assert result.similarity_score == 0.92
         strategy.match.assert_not_called()  # FAISS skipped
 
     def test_cache_miss_with_match(self):
@@ -50,7 +51,7 @@ class TestMatchingService:
         assert result is not None
         assert result.poi_id == "poi-new"
         strategy.match.assert_called_once()
-        cache.set_poi_for_object.assert_called_once_with("obj-2", "poi-new", ttl=300)
+        cache.set_poi_for_object.assert_called_once_with("obj-2", "poi-new", ttl=300, similarity=0.88)
 
     def test_cache_miss_no_match(self):
         service, strategy, cache = self._make_service(strategy_result=[])

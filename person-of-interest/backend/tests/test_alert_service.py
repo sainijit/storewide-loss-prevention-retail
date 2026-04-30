@@ -49,7 +49,7 @@ class TestAlertService:
 
         strategy.send.assert_called_once_with(alert)
         event_repo.store_alert.assert_called_once()
-        event_repo.mark_alert_sent.assert_called_once_with("obj-1", ttl=ANY)
+        event_repo.mark_alert_sent.assert_called_once_with("obj-1:poi-a", ttl=ANY)
 
     def test_idempotent_dedup(self):
         service, strategy, event_repo, _, bus = self._make_service(is_sent=True)
@@ -102,6 +102,8 @@ class TestAlertService:
         assert result.poi_metadata["notes"] == "test suspect"
 
     def test_strategy_error_doesnt_halt_dispatch(self):
+        """All strategies are attempted even if one fails, but alert is NOT
+        persisted because all-must-succeed semantics require full delivery."""
         bad_strategy = MagicMock()
         bad_strategy.name.return_value = "bad"
         bad_strategy.send.side_effect = RuntimeError("network error")
@@ -120,9 +122,9 @@ class TestAlertService:
 
         bad_strategy.send.assert_called_once()
         good_strategy.send.assert_called_once()  # Not blocked by bad_strategy's error
-        # good_strategy succeeded so alert should still be persisted
-        event_repo.store_alert.assert_called_once()
-        event_repo.mark_alert_sent.assert_called_once()
+        # Partial delivery → NOT persisted (all-must-succeed semantics)
+        event_repo.store_alert.assert_not_called()
+        event_repo.mark_alert_sent.assert_not_called()
 
     def test_failed_delivery_does_not_mark_sent(self):
         """If every strategy fails, the alert is NOT marked sent so it can retry."""

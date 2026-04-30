@@ -95,27 +95,37 @@ class RedisCacheRepository(CacheRepository):
         raw = self._r.get(f"{self.PREFIX}{object_id}")
         if raw is None:
             return None
-        # Support both legacy plain string and new "poi_id:similarity" format
-        if b":" in raw if isinstance(raw, bytes) else ":" in raw:
-            parts = raw.decode() if isinstance(raw, bytes) else raw
-            return parts.split(":", 1)[0]
-        return raw.decode() if isinstance(raw, bytes) else raw
+        text = raw.decode() if isinstance(raw, bytes) else raw
+        try:
+            data = json.loads(text)
+            return data.get("poi_id") if isinstance(data, dict) else text
+        except (json.JSONDecodeError, TypeError):
+            # Legacy colon-separated format: "poi_id:similarity"
+            if ":" in text:
+                return text.split(":", 1)[0]
+            return text
 
     def get_similarity_for_object(self, object_id: str) -> Optional[float]:
         """Return the cached similarity score for object_id, or None."""
         raw = self._r.get(f"{self.PREFIX}{object_id}")
         if raw is None:
             return None
-        parts = raw.decode() if isinstance(raw, bytes) else raw
-        if ":" in parts:
-            try:
-                return float(parts.split(":", 1)[1])
-            except ValueError:
-                return None
-        return None
+        text = raw.decode() if isinstance(raw, bytes) else raw
+        try:
+            data = json.loads(text)
+            return float(data["similarity"]) if isinstance(data, dict) and "similarity" in data else None
+        except (json.JSONDecodeError, TypeError, ValueError):
+            # Legacy colon-separated format
+            if ":" in text:
+                try:
+                    return float(text.split(":", 1)[1])
+                except ValueError:
+                    return None
+            return None
 
     def set_poi_for_object(self, object_id: str, poi_id: str, ttl: int = 300, similarity: float = 0.0) -> None:
-        self._r.setex(f"{self.PREFIX}{object_id}", ttl, f"{poi_id}:{similarity}")
+        value = json.dumps({"poi_id": poi_id, "similarity": similarity})
+        self._r.setex(f"{self.PREFIX}{object_id}", ttl, value)
 
     def delete_object(self, object_id: str) -> None:
         self._r.delete(f"{self.PREFIX}{object_id}")

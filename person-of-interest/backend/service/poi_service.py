@@ -11,9 +11,8 @@ from typing import Optional
 import numpy as np
 
 from backend.domain.entities.poi import POI
-from backend.domain.interfaces.repository import EmbeddingRepository, POIRepository
+from backend.domain.interfaces.repository import EmbeddingMappingRepository, EmbeddingRepository, POIRepository
 from backend.factory.factories import EmbeddingModelFactory
-from backend.infrastructure.redis.repository import RedisEmbeddingMappingRepository
 from backend.utils.builder import POIBuilder
 
 log = logging.getLogger("poi.service.poi")
@@ -28,7 +27,7 @@ class POIService:
         self,
         poi_repo: POIRepository,
         embedding_repo: EmbeddingRepository,
-        mapping_repo: RedisEmbeddingMappingRepository,
+        mapping_repo: EmbeddingMappingRepository,
     ) -> None:
         self._poi_repo = poi_repo
         self._embedding_repo = embedding_repo
@@ -88,12 +87,14 @@ class POIService:
         return poi.to_dict() if poi else None
 
     def delete_poi(self, poi_id: str) -> bool:
+        # Remove metadata first (authoritative source) — if this fails,
+        # embeddings remain searchable which is the safer failure mode.
+        deleted = self._poi_repo.delete(poi_id)
+        if not deleted:
+            return False
         # Remove from FAISS
         self._embedding_repo.remove(poi_id)
         # Remove FAISS→POI mappings
         self._mapping_repo.remove_mappings_for_poi(poi_id)
-        # Remove from Redis
-        deleted = self._poi_repo.delete(poi_id)
-        if deleted:
-            log.info("Deleted POI %s", poi_id)
-        return deleted
+        log.info("Deleted POI %s", poi_id)
+        return True

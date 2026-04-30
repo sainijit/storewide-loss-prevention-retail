@@ -23,6 +23,7 @@ class FAISSRepository(EmbeddingRepository):
 
     _instance: Optional[FAISSRepository] = None
     _lock = threading.Lock()
+    _init_lock = threading.Lock()
 
     def __new__(cls) -> FAISSRepository:
         if cls._instance is None:
@@ -34,8 +35,12 @@ class FAISSRepository(EmbeddingRepository):
         return cls._instance
 
     def __init__(self) -> None:
-        if self._initialised:
-            return
+        with self._init_lock:
+            if self._initialised:
+                return
+            self._do_init()
+
+    def _do_init(self) -> None:
         cfg = get_config()
         self._dim = cfg.faiss_dimension
         self._index_path = cfg.faiss_index_path
@@ -47,7 +52,7 @@ class FAISSRepository(EmbeddingRepository):
         self._next_id = 0
 
         self._index = self._load_or_create()
-        self._initialised = True
+        self._initialised = True  # must be last — signals init complete
 
     def _load_or_create(self) -> faiss.IndexIDMap:
         if os.path.exists(self._index_path):

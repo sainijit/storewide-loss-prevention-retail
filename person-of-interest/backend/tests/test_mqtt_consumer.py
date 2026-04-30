@@ -1,4 +1,8 @@
-"""Tests for MQTT EventConsumer."""
+"""Tests for MQTT EventConsumer.
+
+Primary topic: scenescape/data/camera/{camera_id}  — face embeddings → FAISS
+Secondary topic: scenescape/external/{scene_id}/person — monitoring only, no FAISS
+"""
 
 from __future__ import annotations
 
@@ -9,19 +13,25 @@ import numpy as np
 import pytest
 
 from backend.consumers.mqtt_consumer import (
-    REID_STATE_MATCHED,
-    REID_STATE_QUERY_NO_MATCH,
-    REID_STATES_READY,
+    CAMERA_TOPIC_RE,
+    EXTERNAL_TOPIC_RE,
+    FACE_CONFIDENCE_THRESHOLD,
+    REID_MATCHED_STATES,
     EventConsumer,
     _parse_embedding,
 )
 from backend.domain.entities.match_result import AlertPayload, MatchResult
 from backend.observer.events import EventBus
 
-# External topic that carries global UUIDs + reid_state
-_EXT_TOPIC = "scenescape/external/scene-1/person"
-# Legacy camera topic
+# Camera topic (primary — FAISS matching via face embeddings)
 _CAM_TOPIC = "scenescape/data/camera/Camera_01"
+# External topic (monitoring only — body embeddings, no FAISS)
+_EXT_TOPIC = "scenescape/external/scene-1/person"
+
+
+def _make_face_embedding_b64():
+    """Return a 256-d float32 embedding as a list (pre-parsed)."""
+    return np.random.randn(256).tolist()
 
 
 class TestEventConsumer:
@@ -42,32 +52,51 @@ class TestEventConsumer:
         )
 
         bus = EventBus()
+        event_repo = MagicMock()
+        event_repo.claim_thumbnail.return_value = False
+        event_repo.get_thumbnail.return_value = None
 
-        consumer = EventConsumer(matching, events, alert_service, bus)
+        consumer = EventConsumer(matching, events, alert_service, bus, event_repo=event_repo)
         return consumer, matching, events, alert_service, bus
 
-    def _make_payload(self, embedding=None, object_id="obj-uuid-1", reid_state=None):
-        """Build an external-topic style payload (objects is a list)."""
-        if embedding is None:
-            embedding = [np.random.randn(256).tolist()]  # nested [[...]]
+    def _make_camera_payload(self, person_id=42, face_conf=0.95, face_embedding=None):
+        """Build a camera-topic payload with face sub_objects."""
+        if face_embedding is None:
+            face_embedding = _make_face_embedding_b64()
+        return {
+            "timestamp": "2025-01-15T12:30:00.000Z",
+            "objects": {
+                "person": [{
+                    "id": person_id,
+                    "confidence": 0.92,
+                    "bounding_box_px": {"x": 10, "y": 20, "width": 100, "height": 200},
+                    "sub_objects": {
+                        "face": [{
+                            "confidence": face_conf,
+                            "bounding_box_px": {"x": 15, "y": 22, "width": 40, "height": 50},
+                            "metadata": {
+                                "reid": {
+                                    "embedding_vector": face_embedding,
+                                }
+                            },
+                        }]
+                    },
+                }]
+            },
+        }
+
+    def _make_external_payload(self, object_id="uuid-001", reid_state=None):
+        """Build an external-topic payload (body-reid, no face)."""
         obj = {
             "id": object_id,
-            "category": "person",
             "type": "person",
-            "confidence": 0.95,
-            "visibility": ["camera-01"],
-            "metadata": {
-                "reid": {
-                    "embedding_vector": embedding,
-                }
-            },
+            "visibility": ["Camera_01"],
         }
         if reid_state is not None:
             obj["reid_state"] = reid_state
         return {
-            "id": "scene-1",
             "timestamp": "2025-01-15T12:30:00.000Z",
-            "name": "storewide loss prevention",
+            "name": "scene-1",
             "objects": [obj],
         }
 
@@ -78,164 +107,125 @@ class TestEventConsumer:
         consumer.handle_event("some/other/topic", {})
         matching.match_object.assert_not_called()
 
-    def test_routes_external_topic(self):
+    def test_camera_topic_triggers_faiss(self):
+        """Camera topic is primary — face embeddings should go to FAISS."""
         match = MatchResult(poi_id="poi-match", similarity_score=0.9, faiss_distance=0.9)
         consumer, matching, _, _, _ = self._make_consumer(match_result=match)
-        consumer.handle_event(_EXT_TOPIC, self._make_payload())
+        consumer.handle_event(_CAM_TOPIC, self._make_camera_payload())
         matching.match_object.assert_called_once()
 
-    def test_routes_legacy_camera_topic(self):
-        """Legacy camera topic is a no-op (external topic is primary, prevents false positives)."""
-        match = MatchResult(poi_id="poi-match", similarity_score=0.9, faiss_distance=0.9)
-        consumer, matching, _, _, _ = self._make_consumer(match_result=match)
-        cam_payload = {
-            "timestamp": "t",
-            "objects": {
-                "person": [{
-                    "id": "42",
-                    "confidence": 0.9,
-                    "metadata": {"reid": {"embedding_vector": [np.random.randn(256).tolist()]}},
-                }]
-            }
-        }
-        consumer.handle_event(_CAM_TOPIC, cam_payload)
-        # Camera topic is intentionally suppressed — no FAISS matching without reid_state
-        matching.match_object.assert_not_called()
-
-    # ── Person filtering ────────────────────────────────────────────────────
-
-    def test_ignores_non_person_objects(self):
+    def test_external_topic_does_not_trigger_faiss(self):
+        """External topic is monitoring only — no FAISS matching."""
         consumer, matching, events, _, _ = self._make_consumer()
-        payload = self._make_payload()
-        payload["objects"][0]["category"] = "vehicle"
-        payload["objects"][0].pop("type", None)
-        consumer.handle_event(_EXT_TOPIC, payload)
+        consumer.handle_event(_EXT_TOPIC, self._make_external_payload())
         matching.match_object.assert_not_called()
-        events.store_movement.assert_not_called()
+        # But movement is still stored for timeline
+        events.store_movement.assert_called_once()
 
-    def test_skips_objects_without_embedding(self):
+    # ── Camera topic person filtering ───────────────────────────────────────
+
+    def test_skips_persons_without_face_sub_objects(self):
+        """Persons with no face sub_objects are skipped for FAISS."""
         consumer, matching, _, _, _ = self._make_consumer()
-        payload = self._make_payload()
-        payload["objects"][0]["metadata"]["reid"]["embedding_vector"] = None
-        consumer.handle_event(_EXT_TOPIC, payload)
+        payload = self._make_camera_payload()
+        # Remove face sub_objects
+        payload["objects"]["person"][0]["sub_objects"] = {}
+        consumer.handle_event(_CAM_TOPIC, payload)
         matching.match_object.assert_not_called()
 
-    # ── reid_state gating ───────────────────────────────────────────────────
-
-    def test_skips_faiss_when_pending_collection(self):
-        """reid_state=pending_collection must skip FAISS but still store movement."""
-        consumer, matching, events, _, _ = self._make_consumer()
-        payload = self._make_payload(reid_state="pending_collection")
-        consumer.handle_event(_EXT_TOPIC, payload)
-        matching.match_object.assert_not_called()
-        events.store_movement.assert_called_once()  # timeline entry only
-
-    def test_proceeds_when_reid_state_matched(self):
-        """reid_state=matched must trigger FAISS lookup."""
-        match = MatchResult(poi_id="poi-m", similarity_score=0.9, faiss_distance=0.9)
-        consumer, matching, _, _, _ = self._make_consumer(match_result=match)
-        payload = self._make_payload(reid_state=REID_STATE_MATCHED)
-        consumer.handle_event(_EXT_TOPIC, payload)
-        matching.match_object.assert_called_once()
-
-    def test_proceeds_when_reid_state_query_no_match(self):
-        """reid_state=query_no_match (first visit, confirmed person) must trigger FAISS."""
-        match = MatchResult(poi_id="poi-m", similarity_score=0.9, faiss_distance=0.9)
-        consumer, matching, _, _, _ = self._make_consumer(match_result=match)
-        payload = self._make_payload(reid_state=REID_STATE_QUERY_NO_MATCH)
-        consumer.handle_event(_EXT_TOPIC, payload)
-        matching.match_object.assert_called_once()
-
-    def test_proceeds_when_reid_state_absent(self):
-        """No reid_state field = backward compat, FAISS must run."""
-        match = MatchResult(poi_id="poi-m", similarity_score=0.9, faiss_distance=0.9)
-        consumer, matching, _, _, _ = self._make_consumer(match_result=match)
-        payload = self._make_payload()  # no reid_state
-        consumer.handle_event(_EXT_TOPIC, payload)
-        matching.match_object.assert_called_once()
-
-    def test_skips_unknown_reid_states(self):
-        """Any reid_state value not in REID_STATES_READY must block FAISS."""
+    def test_skips_low_confidence_faces(self):
+        """Faces below FACE_CONFIDENCE_THRESHOLD are skipped."""
         consumer, matching, _, _, _ = self._make_consumer()
-        for state in ("collecting", "initializing", "lost", "new_object", "pending_collection"):
-            consumer, matching, _, _, _ = self._make_consumer()
-            payload = self._make_payload(reid_state=state)
-            consumer.handle_event(_EXT_TOPIC, payload)
-            matching.match_object.assert_not_called()
+        payload = self._make_camera_payload(face_conf=0.5)
+        consumer.handle_event(_CAM_TOPIC, payload)
+        matching.match_object.assert_not_called()
 
-    # ── Global UUID cross-camera ────────────────────────────────────────────
+    def test_uses_highest_confidence_face(self):
+        """When multiple face sub_objects exist, the highest-confidence one is used."""
+        consumer, matching, _, _, _ = self._make_consumer()
+        emb_low = np.random.randn(256).tolist()
+        emb_high = np.random.randn(256).tolist()
+        payload = self._make_camera_payload()
+        payload["objects"]["person"][0]["sub_objects"]["face"] = [
+            {
+                "confidence": 0.85,
+                "metadata": {"reid": {"embedding_vector": emb_low}},
+            },
+            {
+                "confidence": 0.98,
+                "metadata": {"reid": {"embedding_vector": emb_high}},
+            },
+        ]
+        consumer.handle_event(_CAM_TOPIC, payload)
+        matching.match_object.assert_called_once()
+        # The embedding passed should be from the higher-confidence face
+        call_embedding = matching.match_object.call_args[0][1]
+        assert call_embedding == [float(x) for x in emb_high]
 
-    def test_uses_uuid_as_object_id(self):
-        """object_id passed to match_object must be the UUID from the message."""
+    # ── Dedup key format ────────────────────────────────────────────────────
+
+    def test_object_id_is_cam_camera_person_format(self):
+        """object_id for camera topic should be f'cam:{camera_id}:{person_id}'."""
         match = MatchResult(poi_id="poi-m", similarity_score=0.9, faiss_distance=0.9)
         consumer, matching, _, _, _ = self._make_consumer(match_result=match)
-        uuid = "fc66d95f-e2b9-42aa-9ce0-382be7f22826"
-        payload = self._make_payload(object_id=uuid, reid_state=REID_STATE_MATCHED)
-        consumer.handle_event(_EXT_TOPIC, payload)
+        consumer.handle_event(_CAM_TOPIC, self._make_camera_payload(person_id=7))
         call_args = matching.match_object.call_args[0]
-        assert call_args[0] == uuid
+        assert call_args[0] == "cam:Camera_01:7"
 
-    def test_uses_visibility_for_camera_id(self):
-        consumer, _, events, _, _ = self._make_consumer(match_result=None)
-        payload = self._make_payload()
+    def test_dedup_same_person_id_in_one_message(self):
+        """Same person_id appearing twice in one message should only be processed once."""
+        consumer, matching, _, _, _ = self._make_consumer()
+        payload = self._make_camera_payload(person_id=42)
+        # Duplicate the person entry
+        payload["objects"]["person"].append(payload["objects"]["person"][0])
+        consumer.handle_event(_CAM_TOPIC, payload)
+        matching.match_object.assert_called_once()
+
+    # ── External topic monitoring ───────────────────────────────────────────
+
+    def test_external_topic_stores_movement(self):
+        """External topic stores movement events for timeline tracking."""
+        consumer, _, events, _, _ = self._make_consumer()
+        consumer.handle_event(_EXT_TOPIC, self._make_external_payload(object_id="global-uuid"))
+        events.store_movement.assert_called_once()
+        call_kwargs = events.store_movement.call_args[1]
+        assert call_kwargs["object_id"] == "global-uuid"
+        assert call_kwargs["camera_id"] == "Camera_01"
+
+    def test_external_topic_uses_visibility_camera(self):
+        """External topic uses visibility[0] as camera_id."""
+        consumer, _, events, _, _ = self._make_consumer()
+        payload = self._make_external_payload()
         payload["objects"][0]["visibility"] = ["Camera_05"]
         consumer.handle_event(_EXT_TOPIC, payload)
         call_kwargs = events.store_movement.call_args[1]
         assert call_kwargs["camera_id"] == "Camera_05"
 
-    def test_falls_back_to_scene_name_when_visibility_empty(self):
-        consumer, _, events, _, _ = self._make_consumer(match_result=None)
-        payload = self._make_payload()
+    def test_external_topic_falls_back_to_scene_name(self):
+        """When visibility is empty, falls back to scene name."""
+        consumer, _, events, _, _ = self._make_consumer()
+        payload = self._make_external_payload()
         payload["objects"][0]["visibility"] = []
         payload["name"] = "store-scene"
         consumer.handle_event(_EXT_TOPIC, payload)
         call_kwargs = events.store_movement.call_args[1]
         assert call_kwargs["camera_id"] == "store-scene"
 
-    def test_dedup_objects_by_uuid(self):
-        """Same UUID appearing twice in one message should only be processed once."""
-        consumer, matching, _, _, _ = self._make_consumer(match_result=None)
-        payload = self._make_payload(object_id="dup-uuid")
-        payload["objects"].append(payload["objects"][0].copy())
-        consumer.handle_event(_EXT_TOPIC, payload)
-        matching.match_object.assert_called_once()
-
-    # ── Embedding parsing ───────────────────────────────────────────────────
-
-    def test_flattens_nested_embedding(self):
-        """[[f1, f2, ...]] → [f1, f2, ...] (external topic JSON format)."""
-        nested = [np.random.randn(256).tolist()]
-        consumer, matching, _, _, _ = self._make_consumer(match_result=None)
-        consumer.handle_event(_EXT_TOPIC, self._make_payload(embedding=nested))
-        call_args = matching.match_object.call_args[0]
-        embedding_passed = call_args[1]
-        assert len(embedding_passed) == 256
-        assert not isinstance(embedding_passed[0], list)
-
-    def test_parses_json_string_embedding(self):
-        """Embedding as JSON string (wire format from external topic)."""
-        floats = np.random.randn(256).tolist()
-        json_str = json.dumps([floats])  # "[[f1, f2, ...]]"
-        consumer, matching, _, _, _ = self._make_consumer(match_result=None)
-        consumer.handle_event(_EXT_TOPIC, self._make_payload(embedding=json_str))
-        call_args = matching.match_object.call_args[0]
-        embedding_passed = call_args[1]
-        assert len(embedding_passed) == 256
-
     # ── Match + alert flow ──────────────────────────────────────────────────
 
     def test_no_match_skips_alert(self):
         consumer, matching, events, alert_service, _ = self._make_consumer(match_result=None)
-        consumer.handle_event(_EXT_TOPIC, self._make_payload())
+        consumer.handle_event(_CAM_TOPIC, self._make_camera_payload())
         matching.match_object.assert_called_once()
         alert_service.create_alert_payload.assert_not_called()
-        events.store_movement.assert_called_once()  # pre-match only
+        # Only pre-match movement stored
+        events.store_movement.assert_called_once()
 
-    def test_match_emits_alert_and_event_bus(self):
+    def test_match_emits_alert_and_stores_twice(self):
         match = MatchResult(poi_id="poi-match", similarity_score=0.9, faiss_distance=0.9)
         consumer, matching, events, alert_service, bus = self._make_consumer(match_result=match)
 
-        consumer.handle_event(_EXT_TOPIC, self._make_payload())
+        consumer.handle_event(_CAM_TOPIC, self._make_camera_payload())
 
         matching.match_object.assert_called_once()
         alert_service.create_alert_payload.assert_called_once()
@@ -248,11 +238,34 @@ class TestEventConsumer:
         observer_cb = MagicMock()
         bus.subscribe("match_found", observer_cb)
 
-        consumer.handle_event(_EXT_TOPIC, self._make_payload(object_id="uuid-123"))
+        consumer.handle_event(_CAM_TOPIC, self._make_camera_payload(person_id=99))
 
         observer_cb.assert_called_once()
         event = observer_cb.call_args[0][0]
-        assert event.object_id == "uuid-123"
+        assert event.object_id == "cam:Camera_01:99"
+
+    # ── Objects as list format ──────────────────────────────────────────────
+
+    def test_camera_topic_handles_objects_as_list(self):
+        """Camera topic should also handle objects as a list (not just dict)."""
+        consumer, matching, _, _, _ = self._make_consumer()
+        emb = _make_face_embedding_b64()
+        payload = {
+            "timestamp": "t",
+            "objects": [{
+                "id": 1,
+                "category": "person",
+                "type": "person",
+                "sub_objects": {
+                    "face": [{
+                        "confidence": 0.95,
+                        "metadata": {"reid": {"embedding_vector": emb}},
+                    }]
+                },
+            }],
+        }
+        consumer.handle_event(_CAM_TOPIC, payload)
+        matching.match_object.assert_called_once()
 
 
 # ── _parse_embedding unit tests ─────────────────────────────────────────────

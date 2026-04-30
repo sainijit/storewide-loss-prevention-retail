@@ -3,14 +3,10 @@
 from __future__ import annotations
 
 import os
-import tempfile
 from unittest.mock import patch
 
 import numpy as np
 import pytest
-
-# Must patch config before importing FAISSRepository
-_TEMP_DIR = tempfile.mkdtemp()
 
 
 @pytest.fixture(autouse=True)
@@ -24,13 +20,13 @@ def _reset_faiss_singleton():
 
 
 @pytest.fixture
-def faiss_repo():
-    """Create a FAISSRepository with temp paths."""
+def faiss_repo(tmp_path):
+    """Create a FAISSRepository with unique temp paths per test."""
     with patch("backend.infrastructure.faiss.repository.get_config") as mock_cfg:
         cfg = type("C", (), {
             "faiss_dimension": 256,
-            "faiss_index_path": os.path.join(_TEMP_DIR, "test.index"),
-            "faiss_id_map_path": os.path.join(_TEMP_DIR, "test_id_map.json"),
+            "faiss_index_path": str(tmp_path / "test.index"),
+            "faiss_id_map_path": str(tmp_path / "test_id_map.json"),
         })()
         mock_cfg.return_value = cfg
 
@@ -87,7 +83,7 @@ class TestFAISSRepository:
         # Should not raise
         faiss_repo.remove("poi-nobody")
 
-    def test_save_and_load(self, faiss_repo):
+    def test_save_and_load(self, faiss_repo, tmp_path):
         v = np.random.randn(256).astype(np.float32)
         v /= np.linalg.norm(v)
         ids = faiss_repo.add("poi-persist", [v])
@@ -100,8 +96,8 @@ class TestFAISSRepository:
         with patch("backend.infrastructure.faiss.repository.get_config") as mock_cfg:
             cfg = type("C", (), {
                 "faiss_dimension": 256,
-                "faiss_index_path": os.path.join(_TEMP_DIR, "test.index"),
-                "faiss_id_map_path": os.path.join(_TEMP_DIR, "test_id_map.json"),
+                "faiss_index_path": str(tmp_path / "test.index"),
+                "faiss_id_map_path": str(tmp_path / "test_id_map.json"),
             })()
             mock_cfg.return_value = cfg
             repo2 = FAISSRepository()

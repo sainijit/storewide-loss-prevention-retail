@@ -41,26 +41,28 @@ class AlertService:
 
     def _on_match_found(self, event: MatchFoundEvent) -> None:
         """Observer callback when a POI match is found."""
-        # Idempotent: check if alert already sent for this object
-        if self._event_repo.is_alert_sent(event.object_id):
-            log.debug("Alert already sent for object=%s, skipping", event.object_id)
+        poi_id = event.alert.poi_id
+        dedup_key = f"{event.object_id}:{poi_id}"
+        # Idempotent: check if alert already sent for this object+POI pair
+        if self._event_repo.is_alert_sent(dedup_key):
+            log.debug("Alert already sent for object=%s poi=%s, skipping", event.object_id, poi_id)
             return
 
-        # Dispatch to all strategies; track whether at least one succeeded
-        delivered = False
+        # Dispatch to all strategies; only mark sent if ALL succeed
+        all_delivered = True
         for strategy in self._strategies:
             try:
                 strategy.send(event.alert)
                 log.info("Alert dispatched via %s: %s", strategy.name(), event.alert.alert_id)
-                delivered = True
             except Exception:
                 log.exception("Failed to dispatch alert via %s", strategy.name())
+                all_delivered = False
 
-        # Only persist and mark sent when delivery succeeded, so a transient
+        # Only persist and mark sent when ALL strategies delivered, so a transient
         # alert-service outage doesn't permanently suppress the alert.
-        if delivered:
+        if all_delivered:
             self._event_repo.store_alert(event.alert.to_dict())
-            self._event_repo.mark_alert_sent(event.object_id, ttl=self._cfg.alert_dedup_ttl)
+            self._event_repo.mark_alert_sent(dedup_key, ttl=self._cfg.alert_dedup_ttl)
 
     def create_alert_payload(
         self,
