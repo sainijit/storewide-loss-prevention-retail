@@ -43,10 +43,20 @@ class MatchingService:
         # Cache-Aside: check cache first
         cached_poi = self._cache.get_poi_for_object(object_id)
         if cached_poi:
-            log.debug("Cache hit: object=%s → poi=%s", object_id, cached_poi)
+            cached_sim = getattr(self._cache, "get_similarity_for_object", lambda _: None)(object_id)
+            sim = cached_sim if cached_sim is not None else 1.0
+            # Re-check threshold — config may have changed since this was cached
+            if sim < self._cfg.similarity_threshold:
+                log.debug(
+                    "Cache hit below threshold: object=%s poi=%s sim=%.4f threshold=%.2f — evicting",
+                    object_id, cached_poi, sim, self._cfg.similarity_threshold,
+                )
+                self._cache.delete_object(object_id)
+                return None
+            log.debug("Cache hit: object=%s → poi=%s similarity=%.4f", object_id, cached_poi, sim)
             return MatchResult(
                 poi_id=cached_poi,
-                similarity_score=1.0,  # Cached — exact match
+                similarity_score=sim,
                 faiss_distance=0.0,
             )
 
@@ -70,9 +80,9 @@ class MatchingService:
             return None
 
         best = matches[0]
-        # Cache the result
+        # Cache the result with similarity score
         self._cache.set_poi_for_object(
-            object_id, best.poi_id, ttl=self._cfg.object_cache_ttl
+            object_id, best.poi_id, ttl=self._cfg.object_cache_ttl, similarity=best.similarity_score
         )
         log.info(
             "Match found: object=%s → poi=%s (similarity=%.3f)",

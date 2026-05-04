@@ -69,6 +69,13 @@ class ConnectionManager:
     def history_count(self) -> int:
         return len(self._history)
 
+    def clear_history(self) -> int:
+        """Clear the in-memory alert history ring buffer. Returns count cleared."""
+        count = len(self._history)
+        self._history.clear()
+        logger.info("Alert history cleared (%d entries removed)", count)
+        return count
+
 
 # Singleton instance shared between the WS endpoint and the delivery handler
 ws_manager = ConnectionManager()

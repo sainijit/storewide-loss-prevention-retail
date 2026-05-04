@@ -21,8 +21,11 @@ The POI system operates alongside Intel® SceneScape in a distributed architectu
 | POI UI           | 3000  | React operator interface                           |
 | Redis            | 6379  | Metadata, events, cache                            |
 | Alert Service    | 8001  | Alert fan-out (WebSocket, MQTT, log)               |
-| MCP Server       | 9000  | AI tools for Claude Desktop (LLM, VLM, OpenVINO)  |
-| SceneScape       | 443   | Spatial scene management + DLStreamer pipelines     |
+| SceneScape       | 8443  | Spatial scene management + DLStreamer pipelines     |
+
+> **Note:** The MCP Server (port 9000) is an optional service for AI-powered analysis via
+> Claude Desktop. It is not started by `make up` — start it separately with
+> `docker compose up -d mcp-server`.
 
 ### Software Dependencies
 
@@ -44,7 +47,7 @@ SceneScape provides the upstream inference pipeline (DLStreamer) and spatial sce
 - Face re-identification via `face-reidentification-retail-0095` (256-d embeddings)
 - Region tracking via regulated scene events
 
-Refer to the [SceneScape documentation](../../scenescape/README.md) for setup instructions.
+Refer to the [SceneScape documentation](../../../scenescape/README.md) for setup instructions.
 
 #### 2. MQTT Broker
 
@@ -106,7 +109,9 @@ This launches the following containers:
 | `poi-ui`             | `person-of-interest-ui`      | 3000  |
 | `poi-redis`          | `redis:8.6.2`                | 6379  |
 | `poi-alert-service`  | `intel/alert-service:0.0.1`  | 8001  |
-| `poi-mcp-server`     | `person-of-interest-mcp-server` | 9000  |
+
+> **Note:** `make up` also starts SceneScape services if not already running.
+> To also start the MCP server, run `docker compose up -d mcp-server` separately.
 
 ### Step 5: Access the Interface
 
@@ -136,18 +141,23 @@ make down
 The complete list of environment variables is available in `.env.example`. Key configuration
 groups:
 
-| Variable                | Default                     | Description                           |
-| ----------------------- | --------------------------- | ------------------------------------- |
-| `MQTT_HOST`             | `broker.scenescape.intel.com` | SceneScape MQTT broker host          |
-| `MQTT_PORT`             | `1883`                      | MQTT broker port                      |
-| `SIMILARITY_THRESHOLD`  | `0.6`                       | FAISS cosine similarity threshold     |
-| `SEARCH_TOP_K`          | `10`                        | Number of FAISS search results        |
-| `OBJECT_CACHE_TTL`      | `300`                       | Cache-Aside TTL (seconds)             |
-| `ALERT_DEDUP_TTL`       | `300`                       | Alert dedup window (seconds)          |
-| `FAISS_DIMENSION`       | `256`                       | Embedding vector dimension            |
-| `INFERENCE_DEVICE`      | `CPU`                       | OpenVINO inference device             |
-| `LOG_LEVEL`             | `INFO`                      | Logging level                         |
-| `BENCHMARK_LATENCY`     | `false`                     | Enable FAISS latency logging          |
+| Variable                | `.env.example` Default      | Compose Override | Description                           |
+| ----------------------- | --------------------------- | ---------------- | ------------------------------------- |
+| `MQTT_HOST`             | `broker.scenescape.intel.com` | —              | SceneScape MQTT broker host          |
+| `MQTT_PORT`             | `1883`                      | —                | MQTT broker port                      |
+| `SIMILARITY_THRESHOLD`  | `0.6`                       | `0.68`           | FAISS cosine similarity threshold     |
+| `SEARCH_TOP_K`          | `10`                        | —                | Number of FAISS search results        |
+| `OBJECT_CACHE_TTL`      | `300`                       | `5`              | Cache-Aside TTL (seconds)             |
+| `ALERT_DEDUP_TTL`       | `300`                       | `60`             | Alert dedup window (seconds)          |
+| `DELIVERY_HANDLERS`     | `log,mqtt,websocket`        | `log,alert_service` | Alert delivery strategies          |
+| `FAISS_DIMENSION`       | `256`                       | —                | Embedding vector dimension            |
+| `INFERENCE_DEVICE`      | `CPU`                       | —                | OpenVINO inference device             |
+| `LOG_LEVEL`             | `INFO`                      | —                | Logging level                         |
+| `BENCHMARK_LATENCY`     | `false`                     | —                | Enable FAISS latency logging          |
+
+> **Important:** The `docker-compose.yml` overrides several `.env.example` defaults at
+> runtime (shown in the "Compose Override" column). The compose values are the effective
+> production defaults. Edit `.env` only for variables not overridden in compose.
 
 ### Running Tests and Generating Coverage Report
 

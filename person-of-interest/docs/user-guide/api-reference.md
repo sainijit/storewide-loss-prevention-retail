@@ -82,13 +82,14 @@ Returns details for a single POI.
 DELETE /api/v1/poi/{poi_id}
 ```
 
-Removes a POI, its FAISS embeddings, and associated metadata.
+Removes a POI, its FAISS embeddings, and associated metadata. Redis metadata is deleted
+first (authoritative source), then FAISS vectors, then embedding mappings.
 
 **Response** (200 OK):
 
 ```json
 {
-  "deleted": true,
+  "status": "deleted",
   "poi_id": "poi-a3f2c1b0"
 }
 ```
@@ -103,40 +104,56 @@ Removes a POI, its FAISS embeddings, and associated metadata.
 POST /api/v1/search
 ```
 
-Upload a face image and find all appearances across cameras within a time range.
+Upload a face image and find all appearances across cameras within a time range. The
+backend generates a 256-d face embedding from the query image, searches FAISS for matching
+POIs, and returns a timeline of visits grouped by date with region dwell information.
 
 **Request** (multipart/form-data):
 
 | Field        | Type   | Required | Description                              |
 | ------------ | ------ | -------- | ---------------------------------------- |
 | `image`      | File   | Yes      | Face image of person to search (JPEG/PNG) |
-| `start_time` | string | Yes      | ISO 8601 timestamp (e.g., `2026-01-01T00:00:00Z`) |
-| `end_time`   | string | Yes      | ISO 8601 timestamp                       |
+| `start_time` | string | No       | ISO 8601 timestamp (e.g., `2026-01-01T00:00:00Z`) |
+| `end_time`   | string | No       | ISO 8601 timestamp                       |
 
 **Response** (200 OK):
 
 ```json
 {
-  "query_embedding_dim": 256,
-  "faiss_matches": 3,
-  "events_found": 42,
-  "timeline": [
+  "event_type": "poi_history_result",
+  "poi_id": "poi-a3f2c1b0",
+  "query_range": {
+    "start": "2026-01-01T00:00:00Z",
+    "end": "2026-12-31T23:59:59Z"
+  },
+  "visits": [
     {
-      "timestamp": "2026-01-15T14:30:00Z",
-      "camera_id": "Camera_01",
-      "region": "entrance-zone",
-      "poi_id": "poi-a3f2c1b0",
-      "thumbnail_path": "/api/v1/thumbnail/cam:Camera_01:5"
+      "date": "2026-01-15",
+      "entry_time": "2026-01-15T14:30:00Z",
+      "exit_time": "2026-01-15T14:35:00Z",
+      "cameras_visited": ["Camera_01"],
+      "regions": ["entrance-zone"],
+      "region_name": "entrance-zone",
+      "duration_sec": 300.0,
+      "region_dwells": [
+        {
+          "region_name": "entrance-zone",
+          "entry_time": "2026-01-15T14:30:00Z",
+          "exit_time": "2026-01-15T14:35:00Z",
+          "dwell_sec": 300.0,
+          "camera_id": "Camera_01"
+        }
+      ],
+      "thumbnail": "/api/v1/thumbnail/cam:Camera_01:5",
+      "alert_id": ""
     }
   ],
-  "region_dwells": [
-    {
-      "region_id": "entrance-zone",
-      "region_name": "Main Entrance",
-      "total_dwell_sec": 145.5,
-      "visits": 3
-    }
-  ]
+  "total_visits": 1,
+  "search_stats": {
+    "vectors_searched": 12,
+    "query_latency_ms": 1.23
+  },
+  "query_timestamp": "2026-01-20T10:00:00Z"
 }
 ```
 
@@ -155,13 +172,24 @@ Returns available cameras from SceneScape.
 **Response** (200 OK):
 
 ```json
-[
-  {
-    "id": "Camera_01",
-    "name": "Entrance Camera"
-  }
-]
+{
+  "cameras": [
+    {
+      "id": "Camera_01",
+      "name": "Entrance Camera"
+    }
+  ],
+  "count": 1
+}
 ```
+
+#### Get Camera
+
+```text
+GET /api/v1/cameras/{camera_id}
+```
+
+Returns details for a single camera from SceneScape.
 
 ---
 
@@ -173,22 +201,51 @@ Returns available cameras from SceneScape.
 GET /api/v1/alerts
 ```
 
-Returns the last 50 POI match alerts.
+Returns the last 50 POI match alerts. Each alert contains nested `match` and `poi_metadata`
+objects.
 
 **Response** (200 OK):
 
 ```json
 [
   {
+    "event_type": "poi_match_alert",
     "alert_id": "alert-20260115-143012-poi-a3f2c1b0",
     "poi_id": "poi-a3f2c1b0",
     "severity": "high",
-    "camera_id": "Camera_01",
-    "confidence": 0.87,
     "timestamp": "2026-01-15T14:30:12Z",
-    "thumbnail_path": "/api/v1/thumbnail/cam:Camera_01:5"
+    "status": "New",
+    "match": {
+      "camera_id": "Camera_01",
+      "confidence": 0.91,
+      "similarity_score": 0.87,
+      "bbox": [200, 150, 280, 380],
+      "frame_number": 0,
+      "thumbnail_path": "/api/v1/thumbnail/cam:Camera_01:5"
+    },
+    "poi_metadata": {
+      "notes": "Shoplifting suspect",
+      "enrollment_date": "2026-01-10T08:00:00Z",
+      "total_previous_matches": 3
+    }
   }
 ]
+```
+
+#### Clear Alerts
+
+```text
+DELETE /api/v1/alerts
+```
+
+Deletes all alert records and the recent-alerts list.
+
+**Response** (200 OK):
+
+```json
+{
+  "deleted_count": 5
+}
 ```
 
 ---
@@ -207,10 +264,9 @@ Returns system health including FAISS vector count and MQTT connection state.
 
 ```json
 {
-  "status": "healthy",
+  "status": "running",
   "faiss_vectors": 12,
-  "mqtt_connected": true,
-  "redis_connected": true
+  "mqtt_connected": true
 }
 ```
 

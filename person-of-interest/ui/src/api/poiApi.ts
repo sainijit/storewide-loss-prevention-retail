@@ -31,3 +31,9 @@ export async function deletePOI(poiId: string) {
   if (!res.ok) throw new Error(`Failed to delete POI: ${res.statusText}`);
   return res.json();
 }
+
+export async function clearAlerts() {
+  const res = await fetch(`${API_BASE}/api/v1/alerts`, { method: 'DELETE' });
+  if (!res.ok) throw new Error(`Failed to clear alerts: ${res.statusText}`);
+  return res.json() as Promise<{ status: string; deleted: number }>;
+}

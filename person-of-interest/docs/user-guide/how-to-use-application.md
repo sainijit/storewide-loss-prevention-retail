@@ -119,10 +119,9 @@ The status endpoint returns:
 
 ```json
 {
-  "status": "healthy",
+  "status": "running",
   "faiss_vectors": 5,
-  "mqtt_connected": true,
-  "redis_connected": true
+  "mqtt_connected": true
 }
 ```
 

@@ -161,8 +161,8 @@ NC := \033[0m
 
 .PHONY: build
 build:
-	@echo "$(BLUE)=== Pulling SceneScape images ===$(NC)"
-	$(COMPOSE_SCENESCAPE) pull
+	@echo "$(BLUE)=== Using local SceneScape images (skipping registry pull) ===$(NC)"
+	-$(COMPOSE_SCENESCAPE) pull 2>/dev/null || echo "SceneScape images already available locally"
 	@echo ""
 	@echo "$(BLUE)=== Building POI images ===$(NC)"
 ifeq ($(REGISTRY),false)

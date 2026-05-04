@@ -56,7 +56,8 @@ processing stays local.
 This section provides a high-level architecture view of the POI Re-identification system
 and how it integrates with Intel® SceneScape and DLStreamer pipelines.
 
-![High-Level System Diagram](./_assets/poi-architecture.png)
+<!-- TODO: Add architecture diagram to ./_assets/poi-architecture.png -->
+<!-- ![High-Level System Diagram](./_assets/poi-architecture.png) -->
 
 ### Key Components
 

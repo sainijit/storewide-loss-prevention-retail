@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from backend.api import camera_routes, poi_routes, search_routes, thumbnail_routes
+from backend.utils.thumbnail import prewarm_grabbers
 from backend.consumers.mqtt_consumer import EventConsumer
 from backend.consumers.scenescape_consumer import ScenescapeRegionConsumer
 from backend.core.config import get_config
@@ -106,6 +107,13 @@ async def lifespan(app: FastAPI):
     camera_routes.init(scenescape)
     thumbnail_routes.init(event_repo)
 
+    # Pre-warm RTSP grabbers so frames are cached before first match event
+    import os as _os
+    _prewarm = [c.strip() for c in _os.getenv("RTSP_PREWARM_CAMERAS", "").split(",") if c.strip()]
+    if _prewarm:
+        log.info("Pre-warming RTSP grabbers for cameras: %s", _prewarm)
+        prewarm_grabbers(_prewarm)
+
     log.info("FAISS: %d vectors indexed", faiss_repo.total_vectors())
     log.info("=== POI System Ready on %s:%d ===", cfg.api_host, cfg.api_port)
 
@@ -151,11 +159,30 @@ def create_app() -> FastAPI:
             "mqtt_connected": _mqtt_adapter.is_connected if _mqtt_adapter else False,
         }
 
-    # Alerts endpoint
+    # Alerts endpoints
     @app.get("/api/v1/alerts")
     async def get_alerts():
         event_repo = RedisEventRepository()
         return event_repo.get_recent_alerts(50)
+
+    @app.delete("/api/v1/alerts")
+    async def clear_alerts():
+        import httpx
+        _cfg = get_config()
+        event_repo = RedisEventRepository()
+        deleted = event_repo.clear_alerts()
+        log.info("Alerts cleared via API: %d Redis keys deleted", deleted)
+
+        # Also clear the alert-service in-memory WebSocket history buffer
+        try:
+            async with httpx.AsyncClient(timeout=5.0, trust_env=False) as client:
+                resp = await client.delete(f"{_cfg.alert_service_url}/api/v1/alerts")
+                resp.raise_for_status()
+                log.info("Alert-service history cleared: %s", resp.json())
+        except Exception:
+            log.warning("Could not clear alert-service history (non-fatal)", exc_info=True)
+
+        return {"status": "cleared", "deleted": deleted}
 
     # Mount uploads directory
     upload_dir = os.getenv("UPLOAD_DIR", "/data/uploads")

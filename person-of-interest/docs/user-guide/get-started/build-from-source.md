@@ -45,7 +45,9 @@ This builds the following images locally:
 | ---------------------------------- | ------------------------ | -------------------- |
 | `person-of-interest-poi-backend`   | `backend/Dockerfile`     | Backend API server   |
 | `person-of-interest-ui`            | `ui/Dockerfile`          | React UI             |
-| `person-of-interest-mcp-server`    | `mcp_server/Dockerfile`  | MCP AI tools server  |
+
+> **Note:** The MCP server image (`person-of-interest-mcp-server`) is not built by default.
+> To build it, run `docker compose build mcp-server` separately.
 
 ### Registry Build
 

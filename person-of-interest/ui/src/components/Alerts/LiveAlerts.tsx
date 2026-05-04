@@ -5,6 +5,7 @@ import AlertCard from './AlertCard';
 import TrackingPanel from './TrackingPanel';
 import ImagePreviewModal from '../common/ImagePreviewModal';
 import { useState } from 'react';
+import { clearAlerts } from '../../api/poiApi';
 
 const LiveAlerts = () => {
   const { alerts, connected, setAlerts } = useAlertWebSocket();
@@ -12,11 +13,27 @@ const LiveAlerts = () => {
   const [filterCamera, setFilterCamera] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [activeTracking, setActiveTracking] = useState<TrackingUpdate | null>(null);
+  const [clearing, setClearing] = useState(false);
 
   const handleAcknowledge = (alertId: string) => {
     setAlerts((prev) =>
       prev.map((a) => (a.alert_id === alertId ? { ...a, status: 'Acknowledged' as const } : a))
     );
+  };
+
+  const handleClearAlerts = async () => {
+    if (!window.confirm('Clear all alerts? This cannot be undone.')) return;
+    setClearing(true);
+    try {
+      await clearAlerts();
+      setAlerts([]);
+      setFilterPoi('');
+      setFilterCamera('');
+    } catch (err) {
+      console.error('Failed to clear alerts:', err);
+    } finally {
+      setClearing(false);
+    }
   };
 
   const handleViewTracking = (alertId: string) => {
@@ -85,10 +102,19 @@ const LiveAlerts = () => {
               {newCount > 0 && <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">{newCount} new</span>}
             </p>
           </div>
-          <span className={`flex items-center gap-1.5 text-xs font-medium ${connected ? 'text-green-600' : 'text-gray-400'}`}>
-            <span className={`inline-block w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-gray-400'}`} />
-            {connected ? 'Connected' : 'Disconnected'}
-          </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleClearAlerts}
+              disabled={clearing || alerts.length === 0}
+              className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {clearing ? 'Clearing…' : 'Clear All Alerts'}
+            </button>
+            <span className={`flex items-center gap-1.5 text-xs font-medium ${connected ? 'text-green-600' : 'text-gray-400'}`}>
+              <span className={`inline-block w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-gray-400'}`} />
+              {connected ? 'Connected' : 'Disconnected'}
+            </span>
+          </div>
         </div>
 
         <div className="space-y-3">
