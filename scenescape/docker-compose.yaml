@@ -112,7 +112,6 @@ services:
       - "8443:443"
     command: >
       webserver
-      --dbhost pgserver
       --dbtype postgres
       --dbport 5432
       --broker broker.scenescape.intel.com
