@@ -140,14 +140,34 @@ class DetectionIndexRepository(IDetectionIndexRepository):
             return self._index.ntotal
 
     def claim_track(self, track_id: str, ttl: Optional[int] = None) -> bool:
-        """Atomically mark a track as stored (NX). Returns True only the first time.
+        """Allow up to N embeddings per track, with minimum time between stores.
 
-        Used to deduplicate: one embedding per track lifetime, not one per frame.
-        TTL matches the detection retention window (default: same as embedding TTL).
+        Returns True if a new embedding slot is available (count < max and
+        cooldown expired), False otherwise.
         """
+        cfg = get_config()
+        max_per_track = cfg.detection_embeddings_per_track
+        interval = cfg.detection_embedding_interval
         effective_ttl = ttl if ttl is not None else self._ttl
-        key = f"detection:track:seen:{track_id}".encode()
-        return bool(self._r.set(key, b"1", ex=effective_ttl, nx=True))
+
+        # Check embedding count for this track
+        count_key = f"detection:track:count:{track_id}".encode()
+        count_raw = self._r.get(count_key)
+        current_count = int(count_raw) if count_raw else 0
+        if current_count >= max_per_track:
+            return False
+
+        # Enforce minimum interval between stores (cooldown)
+        cooldown_key = f"detection:track:cooldown:{track_id}".encode()
+        if not self._r.set(cooldown_key, b"1", ex=interval, nx=True):
+            return False  # too soon since last store
+
+        # Increment counter with same TTL as the embeddings
+        pipe = self._r.pipeline()
+        pipe.incr(count_key)
+        pipe.expire(count_key, effective_ttl)
+        pipe.execute()
+        return True
 
     # ── Private ─────────────────────────────────────────────────────────────
 

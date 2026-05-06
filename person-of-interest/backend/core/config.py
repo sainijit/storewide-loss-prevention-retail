@@ -35,6 +35,8 @@ class Config:
     # FAISS — detection index (all faces seen, 7-day TTL)
     detection_index_enabled: bool = True
     detection_index_top_k: int = 20
+    detection_embeddings_per_track: int = 5
+    detection_embedding_interval: int = 10  # seconds between stored embeddings
 
     # Thresholds
     similarity_threshold: float = 0.6
@@ -111,6 +113,8 @@ class Config:
             faiss_id_map_path=os.getenv("FAISS_ID_MAP_PATH", "/data/faiss/id_map.json"),
             detection_index_enabled=os.getenv("DETECTION_INDEX_ENABLED", "true").lower() == "true",
             detection_index_top_k=int(os.getenv("DETECTION_INDEX_TOP_K", "20")),
+            detection_embeddings_per_track=int(os.getenv("DETECTION_EMBEDDINGS_PER_TRACK", "5")),
+            detection_embedding_interval=int(os.getenv("DETECTION_EMBEDDING_INTERVAL", "10")),
             similarity_threshold=float(os.getenv("SIMILARITY_THRESHOLD", "0.6")),
             search_top_k=int(os.getenv("SEARCH_TOP_K", "10")),
             model_base=model_base,

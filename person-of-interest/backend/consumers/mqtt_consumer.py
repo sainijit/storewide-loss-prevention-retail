@@ -213,14 +213,14 @@ class EventConsumer:
                 camera_id, person_int_id, best_face_conf, len(embedding_vector), _norm,
             )
 
-            # ── Detection index: store one embedding per unique track (not per frame) ──
+            # ── Detection index: store up to N embeddings per track ──
+            # Multiple embeddings capture different angles/poses, improving
+            # offline search accuracy.  claim_track() enforces count limit
+            # and minimum time interval between stores.
             object_id = f"cam:{camera_id}:{person_int_id}"
             if self._detection_index is not None:
                 import numpy as _np
                 try:
-                    # claim_track() uses Redis NX — returns True only the FIRST time
-                    # this track_id is seen. Subsequent detections of the same person
-                    # (same tracker track) are skipped — no duplicate embeddings.
                     if self._detection_index.claim_track(object_id):
                         self._detection_index.add(
                             vector=_np.array(embedding_vector, dtype=_np.float32),
@@ -229,9 +229,9 @@ class EventConsumer:
                             timestamp=timestamp,
                             bbox=obj.get("bounding_box_px") or best_face_bbox,
                         )
-                        log.info("DetectionIndex: new track stored %s", object_id)
+                        log.info("DetectionIndex: embedding stored for %s", object_id)
                     else:
-                        log.debug("DetectionIndex: track already stored, skipping %s", object_id)
+                        log.debug("DetectionIndex: slot limit or cooldown, skipping %s", object_id)
                 except Exception:
                     log.debug("DetectionIndex.add failed for %s", object_id, exc_info=True)
 

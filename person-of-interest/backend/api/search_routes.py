@@ -1,29 +1,46 @@
-"""Search API routes — offline search via detection index."""
+"""Search API routes — offline face search via enrolled POI + detection index.
+
+Two-stage search:
+  Stage 1: Match query against enrolled POI index (same embedding space as
+           online pipeline).  If a POI is identified, return recorded events.
+  Stage 2: Search the detection index (all faces ever seen).  With multiple
+           embeddings per track, the best embedding for each person will
+           produce higher similarity.  Applies threshold + margin check.
+
+Both stages run in sequence.  Results are merged: POI match enriched with
+detection index appearances, or detection-only results for non-enrolled persons.
+"""
 
 from __future__ import annotations
 
 import logging
 import time
-from collections import defaultdict
 from typing import Optional
 
 import numpy as np
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
+from backend.core.config import get_config
+
 log = logging.getLogger("poi.api.search")
 
 router = APIRouter(prefix="/search", tags=["Search"])
 
+# Margin between best and second-best similarity to reject ambiguous matches.
+_SEARCH_MARGIN = 0.05
+
 _embedding_factory = None
 _detection_index = None
 _event_repo = None
+_faiss_repo = None  # enrolled POI index
 
 
-def init(embedding_factory, detection_index, event_repo) -> None:
-    global _embedding_factory, _detection_index, _event_repo
+def init(embedding_factory, detection_index, event_repo, faiss_repo=None) -> None:
+    global _embedding_factory, _detection_index, _event_repo, _faiss_repo
     _embedding_factory = embedding_factory
     _detection_index = detection_index
     _event_repo = event_repo
+    _faiss_repo = faiss_repo
 
 
 @router.post("")
@@ -35,36 +52,187 @@ async def search_history(
 ):
     """Search for a person across all historical detections by uploading an image.
 
-    Queries the detection index (every face ever seen, 7-day retention).
-    Returns appearances grouped by track ID, with entry/exit frames and
-    zone dwell information where available.
+    Works for both enrolled POIs and unknown persons.  Uses face detection
+    + re-identification embedding on the query image, then searches both
+    the enrolled POI index and the all-detections index.
     """
-    if _detection_index is None:
-        raise HTTPException(503, "Detection index not available")
+    if _detection_index is None and _faiss_repo is None:
+        raise HTTPException(503, "No search index available")
 
     img_bytes = await image.read()
     if not img_bytes:
         raise HTTPException(400, "Image file is required")
 
-    # ── Generate query embedding ──
+    # ── Generate query embedding (face detection + reid) ──
     result = _embedding_factory.generate_from_bytes(img_bytes)
     if "error" in result:
         raise HTTPException(422, result["error"])
 
     query_vector = np.array(result["embedding"], dtype=np.float32)
+    cfg = get_config()
+    t_start = time.perf_counter()
 
-    # ── Search detection index ──
-    t0 = time.perf_counter()
-    hits = _detection_index.search(query_vector, top_k=top_k)
-    query_latency_ms = (time.perf_counter() - t0) * 1000
+    # ── Stage 1: enrolled POI index ──
+    poi_match = _match_poi_index(query_vector, cfg)
 
+    # ── Stage 2: detection index (all faces seen) ──
+    detection_appearances = _search_detection_index(
+        query_vector, cfg, top_k, start_time, end_time,
+    )
+
+    total_latency_ms = (time.perf_counter() - t_start) * 1000
+
+    # ── Merge results ──
+    if poi_match is not None:
+        # POI identified — enrich with event history from Redis
+        poi_id = poi_match["poi_id"]
+        poi_sim = poi_match["similarity"]
+        poi_appearances = _get_poi_event_appearances(
+            poi_id, poi_sim, start_time, end_time,
+        )
+        # Combine: POI events + any detection index hits
+        all_appearances = poi_appearances + detection_appearances
+        # Deduplicate by track_id, keeping highest similarity
+        deduped = _deduplicate_appearances(all_appearances)
+        deduped.sort(key=lambda a: a.get("best_match_time", ""), reverse=True)
+
+        return {
+            "event_type": "offline_search_result",
+            "query_range": {"start": start_time, "end": end_time},
+            "query_timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "matched_poi_id": poi_id,
+            "total_appearances": len(deduped),
+            "appearances": deduped,
+            "search_stats": {
+                "search_stage": "poi_index",
+                "poi_similarity": round(poi_sim, 4),
+                "detection_hits": len(detection_appearances),
+                "query_latency_ms": round(total_latency_ms, 2),
+            },
+        }
+
+    # No POI match — return detection index results only
+    if not detection_appearances:
+        return _empty_response(start_time, end_time, total_latency_ms)
+
+    return {
+        "event_type": "offline_search_result",
+        "query_range": {"start": start_time, "end": end_time},
+        "query_timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "total_appearances": len(detection_appearances),
+        "appearances": detection_appearances,
+        "search_stats": {
+            "search_stage": "detection_index",
+            "vectors_searched": _detection_index.total_vectors() if _detection_index else 0,
+            "best_similarity": detection_appearances[0]["similarity"],
+            "query_latency_ms": round(total_latency_ms, 2),
+        },
+    }
+
+
+# ── Stage 1 helper ───────────────────────────────────────────────────────────
+
+def _match_poi_index(
+    query_vector: np.ndarray,
+    cfg,
+) -> Optional[dict]:
+    """Return {"poi_id": ..., "similarity": ...} or None."""
+    if _faiss_repo is None or _faiss_repo.total_vectors() == 0:
+        return None
+
+    hits = _faiss_repo.search(query_vector, top_k=cfg.search_top_k)
     if not hits:
-        return _empty_response(start_time, end_time, query_latency_ms)
+        return None
 
-    # ── Group hits by track_id, keep best similarity per track ──
-    # A single person may appear hundreds of times; we want one entry per track.
+    above = [(fid, sim) for fid, sim in hits if sim >= cfg.similarity_threshold]
+    if not above:
+        return None
+
+    best_per_poi: dict[str, float] = {}
+    for fid, sim in above:
+        poi_id = _faiss_repo.get_poi_id_for_faiss_id(fid)
+        if poi_id and (poi_id not in best_per_poi or sim > best_per_poi[poi_id]):
+            best_per_poi[poi_id] = sim
+
+    if not best_per_poi:
+        return None
+
+    sorted_pois = sorted(best_per_poi.items(), key=lambda x: x[1], reverse=True)
+    best_poi_id, best_sim = sorted_pois[0]
+    second_best_sim = sorted_pois[1][1] if len(sorted_pois) > 1 else 0.0
+    margin = best_sim - second_best_sim
+
+    log.info(
+        "POI index: poi=%s sim=%.4f margin=%.4f threshold=%.2f",
+        best_poi_id, best_sim, margin, cfg.similarity_threshold,
+    )
+
+    if len(sorted_pois) > 1 and margin < _SEARCH_MARGIN:
+        log.warning("POI match rejected: ambiguous (margin %.4f)", margin)
+        return None
+
+    return {"poi_id": best_poi_id, "similarity": best_sim}
+
+
+def _get_poi_event_appearances(
+    poi_id: str,
+    poi_sim: float,
+    start_time: str,
+    end_time: str,
+) -> list[dict]:
+    """Retrieve recorded events for a matched POI, grouped by track."""
+    if _event_repo is None:
+        return []
+
+    events = _event_repo.get_events_for_poi(poi_id, start_time or None, end_time or None)
+    tracks: dict[str, list[dict]] = {}
+    for evt in events:
+        oid = evt.get("object_id", "unknown")
+        tracks.setdefault(oid, []).append(evt)
+
+    appearances = []
+    for track_id, track_events in tracks.items():
+        track_events.sort(key=lambda e: e.get("timestamp", ""))
+        first = track_events[0]
+        appearance = _build_appearance(track_id, {
+            "track_id": track_id,
+            "camera_id": first.get("camera_id", ""),
+            "best_timestamp": first.get("timestamp", ""),
+            "similarity": round(poi_sim, 4),
+            "bbox": None,
+        })
+        for evt in track_events:
+            tp = evt.get("thumbnail_path", "")
+            if tp:
+                appearance["thumbnail_url"] = tp
+                break
+        appearances.append(appearance)
+
+    return appearances
+
+
+# ── Stage 2 helper ───────────────────────────────────────────────────────────
+
+def _search_detection_index(
+    query_vector: np.ndarray,
+    cfg,
+    top_k: int,
+    start_time: str,
+    end_time: str,
+) -> list[dict]:
+    """Search detection index and return filtered appearances list."""
+    if _detection_index is None or _detection_index.total_vectors() == 0:
+        return []
+
+    hits = _detection_index.search(query_vector, top_k=top_k)
+    if not hits:
+        return []
+
+    threshold = cfg.similarity_threshold
     best_per_track: dict[str, dict] = {}
     for faiss_id, similarity in hits:
+        if similarity < threshold:
+            continue
         meta = _detection_index.get_metadata(faiss_id)
         if meta is None:
             continue
@@ -84,30 +252,34 @@ async def search_history(
             }
 
     if not best_per_track:
-        return _empty_response(start_time, end_time, query_latency_ms)
+        return []
 
-    # ── Enrich each track with frames and zone history ──
-    appearances = []
-    for track_id, track in best_per_track.items():
-        appearance = _build_appearance(track_id, track)
-        appearances.append(appearance)
+    ranked = sorted(best_per_track.values(), key=lambda t: t["similarity"], reverse=True)
+    best = ranked[0]
+    second_best_sim = ranked[1]["similarity"] if len(ranked) > 1 else 0.0
+    margin = best["similarity"] - second_best_sim
 
-    # Sort by similarity descending
-    appearances.sort(key=lambda a: a["similarity"], reverse=True)
+    log.info(
+        "Detection index: best=%s sim=%.4f margin=%.4f",
+        best["track_id"], best["similarity"], margin,
+    )
 
-    return {
-        "event_type": "offline_search_result",
-        "query_range": {"start": start_time, "end": end_time},
-        "query_timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "total_appearances": len(appearances),
-        "appearances": appearances,
-        "search_stats": {
-            "vectors_searched": _detection_index.total_vectors(),
-            "raw_hits": len(hits),
-            "unique_tracks": len(best_per_track),
-            "query_latency_ms": round(query_latency_ms, 2),
-        },
-    }
+    if len(ranked) > 1 and margin < _SEARCH_MARGIN:
+        log.warning("Detection index rejected: ambiguous (margin %.4f)", margin)
+        return []
+
+    # Return only the best match
+    return [_build_appearance(best["track_id"], best)]
+
+
+def _deduplicate_appearances(appearances: list[dict]) -> list[dict]:
+    """Keep the highest-similarity entry per track_id."""
+    best: dict[str, dict] = {}
+    for app in appearances:
+        tid = app["track_id"]
+        if tid not in best or app["similarity"] > best[tid]["similarity"]:
+            best[tid] = app
+    return list(best.values())
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -168,8 +340,13 @@ def _encode_key(redis_key: str) -> str:
     return base64.urlsafe_b64encode(redis_key.encode()).decode().rstrip("=")
 
 
-def _empty_response(start_time: str, end_time: str, latency_ms: float) -> dict:
-    return {
+def _empty_response(
+    start_time: str,
+    end_time: str,
+    latency_ms: float,
+    rejection_reason: str = "",
+) -> dict:
+    resp: dict = {
         "event_type": "offline_search_result",
         "query_range": {"start": start_time, "end": end_time},
         "query_timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -178,7 +355,10 @@ def _empty_response(start_time: str, end_time: str, latency_ms: float) -> dict:
         "search_stats": {
             "vectors_searched": _detection_index.total_vectors() if _detection_index else 0,
             "raw_hits": 0,
-            "unique_tracks": 0,
+            "unique_tracks_above_threshold": 0,
             "query_latency_ms": round(latency_ms, 2),
         },
     }
+    if rejection_reason:
+        resp["rejection_reason"] = rejection_reason
+    return resp
