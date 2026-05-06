@@ -227,7 +227,7 @@ class EventConsumer:
                             camera_id=camera_id,
                             track_id=object_id,
                             timestamp=timestamp,
-                            bbox=best_face_bbox,
+                            bbox=obj.get("bounding_box_px") or best_face_bbox,
                         )
                         log.info("DetectionIndex: new track stored %s", object_id)
                     else:
@@ -271,10 +271,13 @@ class EventConsumer:
         whose pipeline timestamp is closest to the detection — this guarantees
         the stored frame shows the same scene as the detection event, not a
         later frame where the person may have moved.
+
+        The person bounding box is passed through so the stored thumbnail is
+        cropped to the detected person, not the full camera frame.
         """
         try:
             if self._event_repo.claim_track_entry(object_id):
-                future = submit_capture(camera_id, None, timestamp)
+                future = submit_capture(camera_id, bbox, timestamp)
                 b64 = future.result(timeout=4)
                 if b64:
                     self._event_repo.store_track_frame(object_id, "entry", b64)
@@ -283,7 +286,7 @@ class EventConsumer:
             log.debug("Track entry frame failed for %s", object_id, exc_info=True)
 
         try:
-            future = submit_capture(camera_id, None, timestamp)
+            future = submit_capture(camera_id, bbox, timestamp)
             b64 = future.result(timeout=2)
             if b64:
                 self._event_repo.store_track_frame(object_id, "last_seen", b64)

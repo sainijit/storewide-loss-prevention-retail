@@ -37,7 +37,7 @@ def reidPolicy(pobj, item, fw, fh):
     name = tensor.get('name','')
     if name and ('reid' in name or 'embedding' in name):
       reid_vector = tensor.get('data', [])
-      v = struct.pack("256f",*reid_vector)
+      v = struct.pack(f"{len(reid_vector)}f", *reid_vector)
       # Move reid under metadata key
       if 'metadata' not in pobj:
         pobj['metadata'] = {}

@@ -125,7 +125,7 @@ class EmbeddingModelFactory:
             log.info("Debug face crop saved to %s", save_crop_path)
 
         # 3. Preprocess — mirrors DLStreamer's gvainference default:
-        #    resize 128×128 → float32 / 255.0 → NCHW
+        #    resize 128×128 → float32 [0,255] → NCHW (NO /255.0)
         reid_blob = preprocess_face(face_crop)
 
         # 4. Inference

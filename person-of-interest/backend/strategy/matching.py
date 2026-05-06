@@ -23,10 +23,11 @@ class CosineSimilarityStrategy(MatchingStrategy):
     def match(
         self, query_vector: np.ndarray, top_k: int = 5, threshold: float = 0.6
     ) -> list[MatchResult]:
-        # Log query vector norm — should be ~1.0
+        # Log query vector norm — raw embeddings from face-reidentification-retail-0095
+        # have norms ~10-15 (model outputs unnormalized); FAISS L2-normalizes before search
         query_norm = float(np.linalg.norm(query_vector))
-        if abs(query_norm - 1.0) > 0.01:
-            log.warning("Query vector norm=%.6f (expected ~1.0) — possible normalisation issue", query_norm)
+        if query_norm < 1.0:
+            log.warning("Query vector norm=%.6f is suspiciously low — possible degenerate embedding", query_norm)
 
         results = self._faiss.search(query_vector, top_k)
         matches = []

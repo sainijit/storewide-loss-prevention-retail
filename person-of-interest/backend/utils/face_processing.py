@@ -6,8 +6,12 @@ specifies ``"input_preproc": []`` — meaning default preprocessing:
     1.  Crop face ROI (raw bbox from face-detection-retail-0004)
     2.  Resize to 128×128
     3.  BGR color order (no conversion)
-    4.  Float32, /255.0
+    4.  Float32 (raw pixel values in [0, 255] — NO /255.0 normalisation)
     5.  NCHW layout
+
+**IMPORTANT**: The model expects input in [0, 255] float32 range, NOT [0, 1].
+Dividing by 255.0 crushes the model's discriminative power and produces nearly
+identical embeddings for all faces (~0.99 cosine similarity).
 
 This module mirrors that chain and adds optional enhancements (padding, squaring)
 that are safe to toggle off when strict DLStreamer parity is needed.
@@ -96,17 +100,21 @@ def preprocess_face(
 
     Mirrors DLStreamer's default ``gvainference`` preprocessing when the model-proc
     ``input_preproc`` is empty:
-        resize → float32 / 255.0 → NCHW
+        resize → float32 (raw [0, 255]) → NCHW
+
+    The model expects pixel values in [0, 255] float32 — do NOT divide by 255.
+    Dividing by 255 produces degenerate embeddings with ~0.99 cosine similarity
+    between any two faces.
 
     Args:
         face_crop: BGR uint8 image of any size.
         target_size: (width, height) of the model input.  Default (128, 128).
 
     Returns:
-        np.ndarray of shape (1, 3, H, W), dtype float32, in [0, 1].
+        np.ndarray of shape (1, 3, H, W), dtype float32, in [0, 255].
     """
     resized = cv2.resize(face_crop, target_size, interpolation=cv2.INTER_LINEAR)
-    blob = resized.transpose(2, 0, 1).astype(np.float32) / 255.0
+    blob = resized.transpose(2, 0, 1).astype(np.float32)
     return blob.reshape(1, 3, target_size[1], target_size[0])
 
 

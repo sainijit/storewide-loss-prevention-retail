@@ -301,9 +301,8 @@ services:
       storewide-lp:
     tty: true
     entrypoint: ["./run.sh"]
-    # Uncomment to use GPU acceleration:
-    # devices:
-    #   - "/dev/dri:/dev/dri"
+    devices:
+      - "/dev/dri:/dev/dri"
     # Uncomment to use NPU acceleration:
     # devices:
     #   - "/dev/accel:/dev/accel"
@@ -364,6 +363,8 @@ services:
       storewide-lp:
     tty: true
     entrypoint: ["./run.sh"]
+    devices:
+      - "/dev/dri:/dev/dri"
     group_add:
       - "109"
       - "110"
