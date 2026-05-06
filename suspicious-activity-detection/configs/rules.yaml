@@ -14,7 +14,7 @@ settings:
   # spread across `frame_capture_interval_seconds`, then publish one
   # ba/requests message. e.g. count=5, interval=1.0 -> 5 frames/s and
   # one BA request every second.
-  frame_capture_count: 5
+  frame_capture_count: 3
   frame_capture_interval_seconds: 1.0
 
 # Default variable values used by the rule engine for ${var:default}
@@ -24,7 +24,7 @@ settings:
 # pre-filter and the loitering rule always agree.
 variables:
   repeat_visit_threshold: 4
-  loiter_threshold_seconds: 5
+  loiter_threshold_seconds: 40
 
 # Session flags — configurable boolean flags set on PersonSession at runtime.
 # Each flag is auto-set based on its trigger type:
@@ -173,13 +173,14 @@ rules:
     conditions:
       - field: dwell_seconds
         op: gt
-        value: ${loiter_threshold_seconds:20}
+        value: ${loiter_threshold_seconds:40}
     actions:
       - type: alert
         params:
           alert_type: LOITERING
           severity: WARNING
-          threshold: ${loiter_threshold_seconds:20}
+          fire_once_per: session
+          threshold: ${loiter_threshold_seconds:40}
           details:
             dwell_seconds: $ctx.dwell_seconds
             threshold: $param.threshold

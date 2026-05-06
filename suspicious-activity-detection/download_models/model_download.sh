@@ -22,7 +22,11 @@ MODELS_DIR="${PROJECT_ROOT}/models"
 ###############################################
 ENV_EXAMPLE="${PROJECT_ROOT}/configs/.env.example"
 ENV_FILE="${PROJECT_ROOT}/docker/.env"
+<<<<<<< exit
+AI_KEYS_REGEX='^(VLM_ENABLED|VLM_MODEL_NAME|VLM_PRECISION|TARGET_DEVICE|YOLO_MODEL_NAME|YOLO_DETECT_MODEL|RTMPOSE_MODEL_NAME)='
+=======
 AI_KEYS_REGEX='^(VLM_ENABLED|VLM_MODEL_NAME|VLM_PRECISION|TARGET_DEVICE|YOLO_MODEL_NAME)='
+>>>>>>> dev
 
 SOURCE_FILE=""
 if [ -f "${ENV_EXAMPLE}" ]; then
@@ -47,11 +51,22 @@ fi
 VLM_MODEL_NAME="${VLM_MODEL_NAME:-Qwen/Qwen2.5-VL-7B-Instruct}"
 VLM_PRECISION="${VLM_PRECISION:-int8}"
 TARGET_DEVICE="${TARGET_DEVICE:-GPU}"
+<<<<<<< exit
+YOLO_MODEL_NAME="${YOLO_MODEL_NAME:-yolo11n-pose}"
+YOLO_DETECT_MODEL="${YOLO_DETECT_MODEL:-yolo11s}"
+RTMPOSE_MODEL_NAME="${RTMPOSE_MODEL_NAME:-rtmpose}"
+=======
 YOLO_MODEL_NAME="${YOLO_MODEL_NAME:-yolo26n-pose}"
+>>>>>>> dev
 
 # Where OVMS expects models
 VLM_MODELS_DIR="${MODELS_DIR}/vlm_models"
 YOLO_MODELS_DIR="${MODELS_DIR}/yolo_models"
+<<<<<<< exit
+YOLO_DETECT_DIR="${MODELS_DIR}/yolo_detect_models"
+RTMPOSE_MODELS_DIR="${MODELS_DIR}/rtmpose_models"
+=======
+>>>>>>> dev
 
 POTENTIAL_SOURCE_DIRS=(
     "${HOME}/ovms-vlm/models"
@@ -63,7 +78,13 @@ echo "=========================================="
 echo "Model Setup — Suspicious Activity Detection"
 echo "=========================================="
 echo "  VLM Model:     ${VLM_MODEL_NAME} (${VLM_PRECISION}, ${TARGET_DEVICE})"
+<<<<<<< exit
+echo "  YOLO Pose:     ${YOLO_MODEL_NAME}"
+echo "  YOLO Detect:   ${YOLO_DETECT_MODEL} (FP16)"
+echo "  RTMPose Model: ${RTMPOSE_MODEL_NAME}"
+=======
 echo "  YOLO Model:    ${YOLO_MODEL_NAME}"
+>>>>>>> dev
 echo "  Models Dir:    ${MODELS_DIR}"
 echo ""
 
@@ -240,11 +261,109 @@ echo "  ✓ config.json written"
 
 }
 
-# --- YOLO download function ---
+# --- YOLO detection model download function ---
+download_yolo_detect() {
+echo ""
+echo "------------------------------------------"
+echo "[2/4] YOLO Detect: ${YOLO_DETECT_MODEL} (FP16)"
+echo "------------------------------------------"
+
+mkdir -p "${YOLO_DETECT_DIR}"
+
+local target_dir="${YOLO_DETECT_DIR}/${YOLO_DETECT_MODEL}"
+if [ -f "${target_dir}/${YOLO_DETECT_MODEL}.xml" ] && [ -f "${target_dir}/${YOLO_DETECT_MODEL}.bin" ]; then
+    echo "  ✓ YOLO detection model already exists"
+else
+    echo "  Downloading and exporting ${YOLO_DETECT_MODEL} (FP16)..."
+
+    if [ ! -d "${SCRIPT_DIR}/yolo-detect-venv" ] || [ ! -f "${SCRIPT_DIR}/yolo-detect-venv/bin/pip" ]; then
+        echo "  Creating YOLO detect Python environment..."
+        python3 -m venv "${SCRIPT_DIR}/yolo-detect-venv" --clear
+    fi
+    source "${SCRIPT_DIR}/yolo-detect-venv/bin/activate"
+
+    local detect_marker="${SCRIPT_DIR}/yolo-detect-venv/.deps_installed"
+    if [ ! -f "${detect_marker}" ]; then
+        pip install -q --upgrade pip
+        pip install -q torch torchvision --index-url https://download.pytorch.org/whl/cpu
+        pip install -q ultralytics openvino
+        touch "${detect_marker}"
+        echo "  ✓ YOLO detect dependencies installed"
+    else
+        echo "  ✓ YOLO detect dependencies cached"
+    fi
+
+    YOLO_DETECT_DIR="${YOLO_DETECT_DIR}" YOLO_DETECT_MODEL="${YOLO_DETECT_MODEL}" \
+    python3 - << 'PYEOF'
+import os, shutil
+from pathlib import Path
+from ultralytics import YOLO
+
+models_dir = Path(os.environ["YOLO_DETECT_DIR"])
+model_name = os.environ["YOLO_DETECT_MODEL"]
+model_pt = models_dir / f"{model_name}.pt"
+export_dir = models_dir / f"{model_name}_openvino_model"
+target_dir = models_dir / model_name
+
+# Download base weights
+if not model_pt.exists():
+    print(f"  Downloading {model_name}.pt ...")
+    orig = os.getcwd()
+    os.chdir(str(models_dir))
+    YOLO(f"{model_name}.pt")
+    os.chdir(orig)
+    print(f"  ✓ Downloaded: {model_pt}")
+else:
+    print(f"  {model_name}.pt already exists")
+
+# Export to OpenVINO FP16 (half=True, dynamic=True)
+if not export_dir.exists() and not target_dir.exists():
+    print(f"  Exporting to OpenVINO FP16 ...")
+    orig = os.getcwd()
+    os.chdir(str(models_dir))
+    YOLO(str(model_pt)).export(format="openvino", dynamic=True, half=True)
+    os.chdir(orig)
+    print(f"  ✓ FP16 export: {export_dir}")
+
+# Move only .xml and .bin into target_dir, clean up the rest
+if export_dir.exists():
+    target_dir.mkdir(parents=True, exist_ok=True)
+    for ext in ("*.xml", "*.bin"):
+        for f in export_dir.glob(ext):
+            dest = target_dir / f"{model_name}{f.suffix}"
+            shutil.move(str(f), str(dest))
+            print(f"  ✓ Moved {f.name} -> {dest}")
+    shutil.rmtree(str(export_dir))
+    print(f"  ✓ Cleaned up {export_dir.name}")
+
+# Remove .pt file (no longer needed)
+if model_pt.exists():
+    model_pt.unlink()
+    print(f"  ✓ Removed {model_pt.name}")
+
+print("YOLO detect export complete.")
+PYEOF
+
+    deactivate 2>/dev/null || true
+
+    if [ -f "${target_dir}/${YOLO_DETECT_MODEL}.xml" ] && [ -f "${target_dir}/${YOLO_DETECT_MODEL}.bin" ]; then
+        echo "  ✓ YOLO detection model ready"
+    else
+        echo "  ✗ YOLO detection export failed"
+        return 1
+    fi
+fi
+}
+
+# --- YOLO pose download function ---
 download_yolo() {
 echo ""
 echo "------------------------------------------"
+<<<<<<< exit
+echo "[3/4] YOLO Pose: ${YOLO_MODEL_NAME}"
+=======
 echo "[2/2] YOLO: ${YOLO_MODEL_NAME}"
+>>>>>>> dev
 echo "------------------------------------------"
 
 mkdir -p "${YOLO_MODELS_DIR}"
@@ -334,28 +453,165 @@ PYEOF
 fi
 }
 
+<<<<<<< exit
+# --- RTMPOSE download function ---
+download_rtmpose() {
+echo ""
+echo "------------------------------------------"
+echo "[4/4] RTMPOSE: ${RTMPOSE_MODEL_NAME}"
+echo "------------------------------------------"
+
+mkdir -p "${RTMPOSE_MODELS_DIR}"
+
+if check_rtmpose_model; then
+    echo "  ✓ RTMPOSE model already exists"
+else
+    echo "  Downloading and exporting ${RTMPOSE_MODEL_NAME}..."
+
+    if [ ! -d "${SCRIPT_DIR}/rtmpose-venv" ] || [ ! -f "${SCRIPT_DIR}/rtmpose-venv/bin/pip" ]; then
+        echo "  Creating RTMPOSE Python environment..."
+        python3 -m venv "${SCRIPT_DIR}/rtmpose-venv" --clear
+    fi
+    source "${SCRIPT_DIR}/rtmpose-venv/bin/activate"
+
+    # Skip pip installs if marker exists
+    local rtmpose_marker="${SCRIPT_DIR}/rtmpose-venv/.deps_installed"
+    if [ ! -f "${rtmpose_marker}" ]; then
+        pip install -q --upgrade pip        
+        pip install -q openvino onnx onnxsim
+        touch "${rtmpose_marker}"
+        echo "  ✓ RTMPOSE dependencies installed"
+    else
+        echo "  ✓ RTMPOSE dependencies cached"
+    fi
+
+    RTMPOSE_MODELS_DIR="${RTMPOSE_MODELS_DIR}" RTMPOSE_MODEL_NAME="${RTMPOSE_MODEL_NAME}" \
+    python3 - << 'PYEOF'
+import os, shutil, glob, urllib.request, zipfile
+from pathlib import Path
+import openvino as ov
+
+models_dir = Path(os.environ["RTMPOSE_MODELS_DIR"])
+model_name = os.environ["RTMPOSE_MODEL_NAME"]
+export_dir = models_dir / f"{model_name}_openvino_model"
+target_dir = models_dir / model_name
+
+# Download official RTMPose-t ONNX from OpenMMLab
+url = (
+    "https://download.openmmlab.com/mmpose/v1/projects/"
+    "rtmposev1/onnx_sdk/"
+    "rtmpose-t_simcc-body7_pt-body7_420e-256x192-026a1439_20230504.zip"
+)
+
+zip_path = models_dir / "rtmpose.zip"
+onnx_dir = models_dir / "rtmpose_onnx"
+
+print("Downloading RTMPose-t ONNX...")
+urllib.request.urlretrieve(url, str(zip_path))
+
+with zipfile.ZipFile(str(zip_path)) as z:
+    z.extractall(str(onnx_dir))
+
+onnx_file = glob.glob(str(onnx_dir / "**" / "*.onnx"), recursive=True)[0]
+print("Using ONNX:", onnx_file)
+
+os.makedirs(str(export_dir), exist_ok=True)
+
+# Freeze dynamic batch dim to static [1, 3, 256, 192]
+model = ov.convert_model(
+    onnx_file,
+    input=[("input", [1, 3, 256, 192])]
+)
+
+ov.save_model(model, str(export_dir / "rtmpose.xml"))
+print(f"Done -> {export_dir}/rtmpose.xml")
+
+print("\n=== INPUTS ===")
+for inp in model.inputs:
+    print(f"  name={inp.any_name}  shape={inp.partial_shape}")
+
+print("\n=== OUTPUTS ===")
+for out in model.outputs:
+    print(f"  name={out.any_name}  shape={out.partial_shape}")
+
+# Move .xml and .bin into target_dir, clean up the rest
+target_dir.mkdir(parents=True, exist_ok=True)
+for ext in ("*.xml", "*.bin"):
+    for f in export_dir.glob(ext):
+        dest = target_dir / f"{model_name}{f.suffix}"
+        shutil.move(str(f), str(dest))
+        print(f"  ✓ Moved {f.name} -> {dest}")
+shutil.rmtree(str(export_dir))
+print(f"  ✓ Cleaned up {export_dir.name}")
+
+# Clean up downloaded zip and extracted ONNX
+if zip_path.exists():
+    zip_path.unlink()
+if onnx_dir.exists():
+    shutil.rmtree(str(onnx_dir))
+print("  ✓ Cleaned up temporary download files")
+
+print("RTMPOSE export complete.")
+PYEOF
+
+    deactivate 2>/dev/null || true
+
+    if check_rtmpose_model; then
+        echo "  ✓ RTMPOSE model ready"
+    else
+        echo "  ✗ RTMPOSE export failed"
+        return 1
+    fi
+fi
+}
+
+
+=======
+>>>>>>> dev
 ###############################################
 # RUN DOWNLOADS IN PARALLEL
 ###############################################
 VLM_LOG=$(mktemp)
+YOLO_DETECT_LOG=$(mktemp)
 YOLO_LOG=$(mktemp)
+<<<<<<< exit
+RTMPOSE_LOG=$(mktemp)
+trap 'rm -f "${VLM_LOG}" "${YOLO_DETECT_LOG}" "${YOLO_LOG}" "${RTMPOSE_LOG}"' EXIT
+=======
 trap 'rm -f "${VLM_LOG}" "${YOLO_LOG}"' EXIT
+>>>>>>> dev
 
 download_vlm > "${VLM_LOG}" 2>&1 &
 VLM_PID=$!
 
+download_yolo_detect > "${YOLO_DETECT_LOG}" 2>&1 &
+YOLO_DETECT_PID=$!
+
 download_yolo > "${YOLO_LOG}" 2>&1 &
 YOLO_PID=$!
 
+<<<<<<< exit
+download_rtmpose > "${RTMPOSE_LOG}" 2>&1 &
+RTMPOSE_PID=$!
+
+echo "Downloading VLM, YOLO Detect, YOLO Pose and RTMPOSE models in parallel..."
+echo "  VLM PID:         ${VLM_PID}"
+echo "  YOLO Detect PID: ${YOLO_DETECT_PID}"
+echo "  YOLO Pose PID:   ${YOLO_PID}"
+echo "  RTMPOSE PID:     ${RTMPOSE_PID}"
+=======
 echo "Downloading VLM and YOLO models in parallel..."
 echo "  VLM PID:     ${VLM_PID}"
 echo "  YOLO PID:    ${YOLO_PID}"
+>>>>>>> dev
 echo ""
 
 # Show progress while waiting
 VLM_DONE=0
+YOLO_DETECT_DONE=0
 YOLO_DONE=0
 VLM_LINES=0
+YOLO_DETECT_LINES=0
 YOLO_LINES=0
 while true; do
     # Check if processes finished
@@ -363,6 +619,11 @@ while true; do
         wait ${VLM_PID}
         VLM_RC=$?
         VLM_DONE=1
+    fi
+    if [ ${YOLO_DETECT_DONE} -eq 0 ] && ! kill -0 ${YOLO_DETECT_PID} 2>/dev/null; then
+        wait ${YOLO_DETECT_PID}
+        YOLO_DETECT_RC=$?
+        YOLO_DETECT_DONE=1
     fi
     if [ ${YOLO_DONE} -eq 0 ] && ! kill -0 ${YOLO_PID} 2>/dev/null; then
         wait ${YOLO_PID}
@@ -377,15 +638,26 @@ while true; do
         VLM_LINES=${NEW_VLM}
     fi
 
-    # Stream new lines from YOLO log
+    # Stream new lines from YOLO Detect log
+    NEW_YOLO_DETECT=$(wc -l < "${YOLO_DETECT_LOG}")
+    if [ "${NEW_YOLO_DETECT}" -gt "${YOLO_DETECT_LINES}" ]; then
+        sed -n "$((YOLO_DETECT_LINES + 1)),${NEW_YOLO_DETECT}p" "${YOLO_DETECT_LOG}" | sed 's/^/  [YOLO-DET] /'
+        YOLO_DETECT_LINES=${NEW_YOLO_DETECT}
+    fi
+
+    # Stream new lines from YOLO Pose log
     NEW_YOLO=$(wc -l < "${YOLO_LOG}")
     if [ "${NEW_YOLO}" -gt "${YOLO_LINES}" ]; then
-        sed -n "$((YOLO_LINES + 1)),${NEW_YOLO}p" "${YOLO_LOG}" | sed 's/^/  [YOLO] /'
+        sed -n "$((YOLO_LINES + 1)),${NEW_YOLO}p" "${YOLO_LOG}" | sed 's/^/  [YOLO-POSE] /'
         YOLO_LINES=${NEW_YOLO}
     fi
 
     # All done? Break.
+<<<<<<< exit
+    if [ ${VLM_DONE} -eq 1 ] && [ ${YOLO_DETECT_DONE} -eq 1 ] && [ ${YOLO_DONE} -eq 1 ] && [ ${RTMPOSE_DONE} -eq 1 ]; then
+=======
     if [ ${VLM_DONE} -eq 1 ] && [ ${YOLO_DONE} -eq 1 ]; then
+>>>>>>> dev
         break
     fi
 
@@ -399,8 +671,13 @@ if [ ${VLM_RC} -ne 0 ]; then
     FAILED=1
 fi
 
+if [ ${YOLO_DETECT_RC} -ne 0 ]; then
+    echo "  ✗ YOLO detect download/export failed (exit code ${YOLO_DETECT_RC})"
+    FAILED=1
+fi
+
 if [ ${YOLO_RC} -ne 0 ]; then
-    echo "  ✗ YOLO download/export failed (exit code ${YOLO_RC})"
+    echo "  ✗ YOLO pose download/export failed (exit code ${YOLO_RC})"
     FAILED=1
 fi
 
@@ -413,6 +690,13 @@ echo ""
 echo "=========================================="
 echo "✓ All Model Setup Complete!"
 echo "=========================================="
+<<<<<<< exit
+echo "  VLM:         ${VLM_MODELS_DIR}/${VLM_MODEL_NAME}"
+echo "  YOLO Detect: ${YOLO_DETECT_DIR}/${YOLO_DETECT_MODEL} (FP16)"
+echo "  YOLO Pose:   ${YOLO_MODELS_DIR}/${YOLO_MODEL_NAME}"
+echo "  RTMPOSE:     ${RTMPOSE_MODELS_DIR}/${RTMPOSE_MODEL_NAME}"
+=======
 echo "  VLM:     ${VLM_MODELS_DIR}/${VLM_MODEL_NAME}"
 echo "  YOLO:    ${YOLO_MODELS_DIR}/${YOLO_MODEL_NAME}"
+>>>>>>> dev
 echo "=========================================="
