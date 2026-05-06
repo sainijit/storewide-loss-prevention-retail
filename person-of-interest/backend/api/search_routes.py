@@ -61,9 +61,11 @@ async def search_history(
     if not hits:
         return _empty_response(start_time, end_time, query_latency_ms)
 
-    # ── Group hits by track_id, keep best similarity per track ──
-    # A single person may appear hundreds of times; we want one entry per track.
-    best_per_track: dict[str, dict] = {}
+    # ── Build one appearance per FAISS hit (unique per detection) ──
+    # Each faiss_id is a distinct temporal detection with its own stored frame.
+    # We do NOT group by track_id — the same tracker int ID can be reused for
+    # different people across time windows, so grouping would merge different people.
+    appearances = []
     for faiss_id, similarity in hits:
         meta = _detection_index.get_metadata(faiss_id)
         if meta is None:
@@ -73,24 +75,11 @@ async def search_history(
             continue
         if end_time and ts and ts > end_time:
             continue
-        track_id = meta["track_id"]
-        if track_id not in best_per_track or similarity > best_per_track[track_id]["similarity"]:
-            best_per_track[track_id] = {
-                "track_id": track_id,
-                "camera_id": meta.get("camera_id", ""),
-                "best_timestamp": ts,
-                "similarity": round(float(similarity), 4),
-                "bbox": meta.get("bbox"),
-            }
-
-    if not best_per_track:
-        return _empty_response(start_time, end_time, query_latency_ms)
-
-    # ── Enrich each track with frames and zone history ──
-    appearances = []
-    for track_id, track in best_per_track.items():
-        appearance = _build_appearance(track_id, track)
+        appearance = _build_appearance(faiss_id, similarity, meta)
         appearances.append(appearance)
+
+    if not appearances:
+        return _empty_response(start_time, end_time, query_latency_ms)
 
     # Sort by similarity descending
     appearances.sort(key=lambda a: a["similarity"], reverse=True)
@@ -104,7 +93,7 @@ async def search_history(
         "search_stats": {
             "vectors_searched": _detection_index.total_vectors(),
             "raw_hits": len(hits),
-            "unique_tracks": len(best_per_track),
+            "unique_tracks": len({a["track_id"] for a in appearances}),
             "query_latency_ms": round(query_latency_ms, 2),
         },
     }
@@ -112,21 +101,28 @@ async def search_history(
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
-def _build_appearance(track_id: str, track: dict) -> dict:
-    """Build the appearance dict for one track: frames + zone dwells."""
-    camera_id = track["camera_id"]
+def _build_appearance(faiss_id: int, similarity: float, meta: dict) -> dict:
+    """Build the appearance dict for one FAISS hit: unique frame + zone dwells."""
+    track_id = meta["track_id"]
+    camera_id = meta.get("camera_id", "")
 
-    # ── Frame URLs ──
-    entry_frame_url = None
-    last_seen_frame_url = None
+    # ── Per-faiss_id frame (unique, never overwritten) ──
+    # Primary: detection:frame:{faiss_id} — written at ingest time, exact frame.
+    # Fallback: track:frame:{track_id}:entry — written per tracker session (best
+    # effort for detections stored before per-faiss frame storage was added).
+    frame_url = None
+    if _detection_index is not None:
+        frame = _detection_index.get_frame(faiss_id)
+        if frame:
+            frame_url = f"/api/v1/frames/{_encode_key(f'detection:frame:{faiss_id}')}"
 
-    if _event_repo is not None:
-        if _event_repo.track_frame_exists(track_id, "entry"):
-            key = _event_repo.get_track_frame_key(track_id, "entry")
-            entry_frame_url = f"/api/v1/frames/{_encode_key(key)}"
-        if _event_repo.track_frame_exists(track_id, "last_seen"):
-            key = _event_repo.get_track_frame_key(track_id, "last_seen")
-            last_seen_frame_url = f"/api/v1/frames/{_encode_key(key)}"
+    if frame_url is None and _event_repo is not None:
+        # Try entry frame first, then last_seen
+        for event_type in ("entry", "last_seen"):
+            if _event_repo.track_frame_exists(track_id, event_type):
+                key = _event_repo.get_track_frame_key(track_id, event_type)
+                frame_url = f"/api/v1/frames/{_encode_key(key)}"
+                break
 
     # ── Zone dwells (available when zones are configured) ──
     zone_appearances = []
@@ -140,7 +136,6 @@ def _build_appearance(track_id: str, track: dict) -> dict:
                 "exit_time": dwell.get("exit_time", ""),
                 "dwell_seconds": dwell.get("dwell_sec"),
             }
-            # Attach zone entry/exit frame URLs if they exist
             entry_fk = dwell.get("entry_frame_key", "")
             exit_fk = dwell.get("exit_frame_key", "")
             if entry_fk:
@@ -152,12 +147,13 @@ def _build_appearance(track_id: str, track: dict) -> dict:
         zone_appearances.sort(key=lambda z: z.get("entry_time") or "")
 
     return {
+        "faiss_id": faiss_id,
         "track_id": track_id,
         "camera_id": camera_id,
-        "similarity": track["similarity"],
-        "best_match_time": track["best_timestamp"],
-        "entry_frame_url": entry_frame_url,
-        "last_seen_frame_url": last_seen_frame_url,
+        "similarity": round(float(similarity), 4),
+        "timestamp": meta.get("timestamp", ""),
+        "bbox": meta.get("bbox"),
+        "frame_url": frame_url,
         "zone_appearances": zone_appearances,
     }
 

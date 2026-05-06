@@ -22,7 +22,9 @@ import logging
 import os
 import threading
 import time
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 from typing import Optional
 
 import cv2
@@ -49,14 +51,42 @@ def build_rtsp_url(camera_id: str) -> str:
 # MQTT image subscriber (preferred source — same frame as detection)
 # ---------------------------------------------------------------------------
 
-class _MqttImageSubscriber:
-    """Subscribes to scenescape/image/camera/{camera_id}.
+def _parse_pipeline_ts(ts_str: str) -> float:
+    """Parse a pipeline ISO-8601 timestamp string to a Unix timestamp float.
 
-    The DLStreamer sscape_adapter publishes ONE frame per `getimage` command
-    (publish_image flag is reset after each publish).  This class sends the
-    command and uses a threading.Condition to wait for exactly that response,
-    guaranteeing the returned frame matches the detection moment.
+    Handles the 'Z' suffix used by sscape_adapter (e.g. '2026-05-07T12:34:56.789Z').
     """
+    return datetime.fromisoformat(ts_str.replace("Z", "+00:00")).timestamp()
+
+
+class _MqttImageSubscriber:
+    """Subscribes to scenescape/image/camera/{camera_id} and maintains a
+    timestamp-indexed ring buffer of recent frames.
+
+    Why a ring buffer instead of request-and-wait:
+      sscape_adapter publishes ONE frame per `getimage` command *for the next
+      video frame it processes*.  By the time our backend receives a detection
+      and sends `getimage`, DLStreamer is already 1-3 frames ahead — the person
+      may have moved.
+
+      The image payload includes the same `timestamp` field as the detection
+      payload (both set from `postdecode_timestamp`).  By continuously sending
+      `getimage` at a heartbeat rate and buffering every response with its
+      pipeline timestamp, we can instantly retrieve the frame whose timestamp
+      is closest to any given detection timestamp — this is the actual frame
+      that was being processed when the detection was published.
+
+    Heartbeat: sends `getimage` every _HEARTBEAT_INTERVAL seconds so the
+    buffer is always populated with recent frames.
+    """
+
+    # Number of (timestamp, b64) pairs to keep.  At the heartbeat rate this
+    # covers ~15 seconds of history — more than enough to match any detection.
+    _RING_BUFFER_SIZE = 30
+
+    # How often to proactively send `getimage` (seconds).
+    # 300 ms → ~3 frames/sec cached; matches well with a 10-FPS pipeline.
+    _HEARTBEAT_INTERVAL = 0.3
 
     def __init__(self, camera_id: str, mqtt_host: str, mqtt_port: int) -> None:
         import paho.mqtt.client as mqtt  # type: ignore[import]
@@ -64,8 +94,10 @@ class _MqttImageSubscriber:
         self._host = mqtt_host
         self._port = mqtt_port
 
+        # Ring buffer: deque of (pipeline_timestamp_str, base64_jpeg)
+        self._ring: deque[tuple[str, str]] = deque(maxlen=self._RING_BUFFER_SIZE)
         self._latest_b64: Optional[str] = None
-        self._cond = threading.Condition(threading.Lock())
+        self._cond = threading.Condition()
 
         self._image_topic = f"scenescape/image/camera/{camera_id}"
         self._cmd_topic   = f"scenescape/cmd/camera/{camera_id}"
@@ -75,10 +107,17 @@ class _MqttImageSubscriber:
         self._client.on_message    = self._on_message
         self._client.on_disconnect = self._on_disconnect
 
+        # MQTT network loop thread
         self._thread = threading.Thread(
             target=self._run, daemon=True, name=f"mqtt-img-{camera_id}"
         )
         self._thread.start()
+
+        # Heartbeat thread — sends getimage periodically so the ring is always warm
+        self._hb_thread = threading.Thread(
+            target=self._heartbeat_loop, daemon=True, name=f"mqtt-hb-{camera_id}"
+        )
+        self._hb_thread.start()
 
     def _run(self) -> None:
         while True:
@@ -88,6 +127,14 @@ class _MqttImageSubscriber:
             except Exception as exc:
                 log.warning("MQTT image subscriber disconnected camera=%s: %s", self._camera_id, exc)
             time.sleep(3)
+
+    def _heartbeat_loop(self) -> None:
+        """Continuously send getimage so the ring buffer stays populated."""
+        # Give the MQTT connection a moment to establish before the first request
+        time.sleep(3.0)
+        while True:
+            self.request_frame()
+            time.sleep(self._HEARTBEAT_INTERVAL)
 
     def _on_connect(self, client, userdata, flags, rc) -> None:
         if rc == 0:
@@ -101,57 +148,78 @@ class _MqttImageSubscriber:
         log.debug("MQTT image subscriber disconnected rc=%d camera=%s", rc, self._camera_id)
 
     def _on_message(self, client, userdata, msg) -> None:
+        """Store the received frame in the ring buffer with its pipeline timestamp."""
         try:
             import json as _json
             data = _json.loads(msg.payload)
             b64 = data.get("image")
+            frame_ts = data.get("timestamp", "")   # same field as detection payload
             if b64:
                 with self._cond:
+                    self._ring.append((frame_ts, b64))
                     self._latest_b64 = b64
-                    self._cond.notify_all()   # wake everyone waiting for a frame
-                log.debug("MQTT image received camera=%s len=%d", self._camera_id, len(b64))
+                    self._cond.notify_all()
+                log.debug("MQTT image received camera=%s ts=%s len=%d",
+                          self._camera_id, frame_ts, len(b64))
         except Exception as exc:
             log.debug("MQTT image parse error camera=%s: %s", self._camera_id, exc)
 
     def request_frame(self) -> None:
-        """Ask the DLStreamer adapter to publish a fresh frame."""
+        """Ask the DLStreamer adapter to publish a fresh frame (fire-and-forget)."""
         try:
             self._client.publish(self._cmd_topic, "getimage", qos=0)
-            log.debug("Sent getimage for camera=%s", self._camera_id)
         except Exception as exc:
             log.debug("Failed to send getimage camera=%s: %s", self._camera_id, exc)
 
-    def request_frame_and_wait(self, timeout: float = 3.0) -> Optional[str]:
-        """Send getimage and block until the pipeline publishes the response.
+    def get_frame_for_timestamp(self, detection_ts: str, max_age_sec: float = 3.0) -> Optional[str]:
+        """Return the buffered frame whose pipeline timestamp is closest to detection_ts.
 
-        Returns the base64 JPEG string, or None on timeout.
-        The pipeline processes getimage in the next video frame cycle (~100 ms),
-        so the returned frame is guaranteed to be from the detection moment.
+        The sscape_adapter sets the same `postdecode_timestamp` on both the
+        detection payload and the image payload for each frame, so the best
+        match will be the exact frame that produced the detection.
+
+        Returns None if the ring buffer is empty.
+        Falls back to `_latest_b64` if timestamps cannot be parsed.
+        """
+        with self._cond:
+            if not self._ring:
+                return None
+
+            if not detection_ts:
+                return self._latest_b64
+
+            try:
+                t_target = _parse_pipeline_ts(detection_ts)
+            except (ValueError, TypeError):
+                return self._latest_b64
+
+            best_b64: Optional[str] = None
+            best_delta = float("inf")
+            for frame_ts, frame_b64 in self._ring:
+                try:
+                    delta = abs(_parse_pipeline_ts(frame_ts) - t_target)
+                    if delta < best_delta:
+                        best_delta = delta
+                        best_b64 = frame_b64
+                except (ValueError, TypeError):
+                    continue
+
+            if best_b64 is not None and best_delta <= max_age_sec:
+                log.debug("Ring buffer match: camera=%s delta=%.3fs", self._camera_id, best_delta)
+                return best_b64
+
+            # Fallback: use latest regardless of age
+            return self._latest_b64
+
+    def request_frame_and_wait(self, timeout: float = 3.0) -> Optional[str]:
+        """Fallback: send getimage and wait for the very next frame response.
+
+        Used when the ring buffer is empty (e.g. MQTT just connected).
         """
         with self._cond:
             self.request_frame()
-            # Wait for _on_message to deliver a new frame
-            arrived = self._cond.wait(timeout=timeout)
-            if not arrived:
-                log.warning("Timeout waiting for MQTT image camera=%s", self._camera_id)
-                return self._latest_b64   # return whatever we have (may be None)
+            self._cond.wait(timeout=timeout)
             return self._latest_b64
-
-    # Legacy helpers kept for prewarm / compatibility
-    def get_latest_b64(self, wait_timeout: float = 2.0) -> Optional[str]:
-        return self.request_frame_and_wait(timeout=wait_timeout)
-
-    def get_latest_frame(self, wait_timeout: float = 2.0) -> Optional[np.ndarray]:
-        b64 = self.get_latest_b64(wait_timeout)
-        if b64 is None:
-            return None
-        try:
-            raw = base64.b64decode(b64)
-            buf = np.frombuffer(raw, dtype=np.uint8)
-            return cv2.imdecode(buf, cv2.IMREAD_COLOR)
-        except Exception as exc:
-            log.debug("MQTT image decode error camera=%s: %s", self._camera_id, exc)
-            return None
 
 
 # Registry: camera_id -> _MqttImageSubscriber
@@ -264,22 +332,28 @@ def frame_to_base64_jpeg(image: np.ndarray, quality: int = 80) -> Optional[str]:
 def capture_thumbnail(camera_id: str, bbox: Optional[dict], timestamp: str = "") -> Optional[str]:
     """Return a base64 JPEG for camera_id at the detection moment.
 
-    MQTT image path (preferred — cameras listed in MQTT_IMAGE_CAMERAS):
-      Sends a getimage command to the DLStreamer pipeline and waits for the
-      response.  The pipeline captures the current video frame and publishes it
-      within ~100 ms (next pipeline cycle).  This frame is from the detection
-      moment, not a stale RTSP cache.
+    MQTT image path (cameras in MQTT_IMAGE_CAMERAS):
+      Looks up the ring-buffered frame whose pipeline timestamp is closest to
+      the detection timestamp.  The sscape_adapter embeds the same
+      `postdecode_timestamp` in both the image and detection payloads, so the
+      closest match is the exact frame being processed when the detection fired.
+
+      Falls back to request_frame_and_wait() if the ring buffer is empty (e.g.
+      MQTT just reconnected) — this blocks briefly but only happens once.
 
     RTSP fallback:
-      Used for cameras not configured in MQTT_IMAGE_CAMERAS.
+      Used for cameras not in MQTT_IMAGE_CAMERAS.
     """
     if use_mqtt_image(camera_id):
         sub = _get_mqtt_subscriber(camera_id)
-        b64 = sub.request_frame_and_wait(timeout=3.0)
+        b64 = sub.get_frame_for_timestamp(timestamp, max_age_sec=3.0)
         if b64 is None:
-            log.warning("No MQTT image received for camera=%s — falling back to RTSP", camera_id)
-        else:
+            # Ring buffer is empty — wait for the next heartbeat to deliver a frame
+            log.info("Ring buffer empty for camera=%s, waiting for frame", camera_id)
+            b64 = sub.request_frame_and_wait(timeout=3.0)
+        if b64:
             return b64
+        log.warning("No MQTT image for camera=%s — falling back to RTSP", camera_id)
 
     # RTSP fallback
     grabber = _get_grabber(camera_id)
@@ -303,6 +377,77 @@ def capture_thumbnail(camera_id: str, bbox: Optional[dict], timestamp: str = "")
 def submit_capture(camera_id: str, bbox: Optional[dict], timestamp: str = ""):
     """Submit a thumbnail capture to the shared thread pool. Returns a Future."""
     return _executor.submit(capture_thumbnail, camera_id, bbox, timestamp)
+
+
+# ---------------------------------------------------------------------------
+# Inline per-camera frame cache
+#
+# Populated by MQTTAdapter when it receives scenescape/image/camera/+ messages
+# (same MQTT connection as detection messages, so image always arrives BEFORE
+# the detection on the same connection — guaranteed in-order delivery).
+#
+# grab_frame_now() reads from this cache synchronously with zero delay.
+# ---------------------------------------------------------------------------
+
+# camera_id → (pipeline_timestamp_str, base64_jpeg)
+_inline_cache: dict[str, tuple[str, str]] = {}
+
+def notify_frame(camera_id: str, timestamp: str, b64: str) -> None:
+    """Store the latest frame for a camera.  Called from the MQTT adapter on
+    the same thread that processes detections, so no lock is needed."""
+    _inline_cache[camera_id] = (timestamp, b64)
+    # Also push into the ring buffer for the heartbeat fallback path
+    sub = _mqtt_subscribers.get(camera_id)
+    if sub is not None:
+        with sub._cond:
+            sub._ring.append((timestamp, b64))
+            sub._latest_b64 = b64
+            sub._cond.notify_all()
+
+
+def grab_frame_now(camera_id: str, timestamp: str = "") -> Optional[str]:
+    """Synchronously return the best available frame for camera_id.
+
+    Priority:
+    1. Inline cache (updated by MQTTAdapter image subscription — same connection
+       as detection, so image arrives BEFORE detection for the same frame).
+    2. Ring buffer (updated by _MqttImageSubscriber heartbeat — fallback when
+       the adapter connection is not carrying image messages).
+    3. RTSP grabber (last resort).
+
+    This function never blocks and never calls out to the network.
+    """
+    # 1. Inline cache — best source
+    cached = _inline_cache.get(camera_id)
+    if cached:
+        cache_ts, cache_b64 = cached
+        if not timestamp:
+            return cache_b64
+        # Accept if the cached frame is within 2 seconds of the detection
+        try:
+            delta = abs(_parse_pipeline_ts(cache_ts) - _parse_pipeline_ts(timestamp))
+            if delta <= 2.0:
+                log.debug("grab_frame_now: inline cache hit camera=%s delta=%.3fs", camera_id, delta)
+                return cache_b64
+        except (ValueError, TypeError):
+            return cache_b64
+
+    # 2. Ring buffer (separate subscriber + heartbeat)
+    sub = _mqtt_subscribers.get(camera_id)
+    if sub is not None:
+        b64 = sub.get_frame_for_timestamp(timestamp, max_age_sec=3.0)
+        if b64:
+            log.debug("grab_frame_now: ring buffer hit camera=%s", camera_id)
+            return b64
+
+    # 3. RTSP grabber
+    if camera_id in _grabbers:
+        frame = _grabbers[camera_id].get_latest()
+        if frame is not None:
+            return frame_to_base64_jpeg(frame)
+
+    log.debug("grab_frame_now: no frame available for camera=%s", camera_id)
+    return None
 
 
 def prewarm_grabbers(camera_ids: list[str]) -> None:
