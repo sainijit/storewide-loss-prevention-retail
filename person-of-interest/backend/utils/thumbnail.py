@@ -79,6 +79,7 @@ class _MqttImageSubscriber:
         self._frame_b64: Optional[str] = None
         self._frame_event = threading.Event()
         self._lock = threading.Lock()
+        self._cond = threading.Condition(threading.Lock())
         # Ring buffer: timestamp_str -> base64 JPEG
         self._frame_buffer: collections.OrderedDict[str, str] = collections.OrderedDict()
 
@@ -145,6 +146,8 @@ class _MqttImageSubscriber:
                         while len(self._frame_buffer) > self._BUFFER_SIZE:
                             self._frame_buffer.popitem(last=False)
                 self._frame_event.set()
+                with self._cond:
+                    self._cond.notify_all()
                 log.debug("MQTT image cached for camera=%s ts=%s (%d bytes)", self._camera_id, ts, len(b64))
         except Exception as exc:
             log.debug("MQTT image parse error camera=%s: %s", self._camera_id, exc)
@@ -155,6 +158,18 @@ class _MqttImageSubscriber:
             self._client.publish(self._cmd_topic, "getimage", qos=0)
         except Exception:
             pass
+
+    def request_frame_and_wait(self, timeout: float = 3.0) -> Optional[str]:
+        """Send a getimage command and block until a new frame arrives.
+
+        Used by offline search to grab a frame on demand rather than
+        relying on the continuous polling buffer.
+        """
+        with self._cond:
+            self.request_frame()
+            self._cond.wait(timeout=timeout)
+        with self._lock:
+            return self._frame_b64
 
     def get_latest_b64(self, wait_timeout: float = 2.0) -> Optional[str]:
         """Return the latest base64 JPEG, waiting if needed."""
