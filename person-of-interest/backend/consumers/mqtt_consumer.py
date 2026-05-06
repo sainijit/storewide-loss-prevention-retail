@@ -352,14 +352,12 @@ class EventConsumer:
         # The MQTT image subscriber continuously polls getimage, caching frames
         # keyed by timestamp.  submit_capture looks up the exact frame matching
         # this detection's timestamp — no SceneScape code changes required.
-        thumbnail_path = ""
-        if camera_id and self._event_repo and self._event_repo.claim_thumbnail(object_id, ttl=30):
+        thumbnail_b64 = None
+        if camera_id and self._event_repo:
             future = submit_capture(camera_id, bounding_box, timestamp)
             try:
-                b64 = future.result(timeout=6)
-                if b64:
-                    self._event_repo.store_thumbnail(object_id, b64, ttl=3600)
-                    thumbnail_path = f"/api/v1/thumbnail/{object_id}"
+                thumbnail_b64 = future.result(timeout=6)
+                if thumbnail_b64:
                     log.info("Thumbnail captured for uuid=%s camera=%s", object_id, camera_id)
                 else:
                     log.warning("Thumbnail returned no data for uuid=%s camera=%s", object_id, camera_id)
@@ -367,8 +365,6 @@ class EventConsumer:
                 log.warning("Thumbnail timed out or failed for uuid=%s camera=%s", object_id, camera_id)
         elif not camera_id:
             log.warning("No camera_id for uuid=%s — thumbnail skipped (visibility empty)", object_id)
-        elif self._event_repo and self._event_repo.get_thumbnail(object_id):
-            thumbnail_path = f"/api/v1/thumbnail/{object_id}"
 
         alert = self._alerts.create_alert_payload(
             match=match,
@@ -378,8 +374,17 @@ class EventConsumer:
             region_name=display_camera,
             confidence=confidence,
             center_of_mass=bounding_box,
-            thumbnail_path=thumbnail_path,
+            thumbnail_path="",  # set below after storing with alert_id
         )
+
+        # Store thumbnail keyed by alert_id (unique per alert) — prevents
+        # overwriting when the tracker reassigns person_id across video loops.
+        thumbnail_path = ""
+        if thumbnail_b64 and self._event_repo:
+            self._event_repo.store_thumbnail(alert.alert_id, thumbnail_b64, ttl=3600)
+            thumbnail_path = f"/api/v1/thumbnail/{alert.alert_id}"
+            log.info("Thumbnail stored: key=%s camera=%s", alert.alert_id, camera_id)
+        alert.match["thumbnail_path"] = thumbnail_path
 
         # Update movement event with the matched poi_id and thumbnail
         self._events.store_movement(

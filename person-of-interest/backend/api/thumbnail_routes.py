@@ -19,9 +19,14 @@ def init(event_repo) -> None:
     _event_repo = event_repo
 
 
-@router.get("/thumbnail/{object_id}", response_class=Response)
+@router.get("/thumbnail/{object_id:path}", response_class=Response)
 def get_thumbnail(object_id: str):
-    """Return the captured face crop for a tracked person as JPEG."""
+    """Return the captured face crop for a tracked person or alert as JPEG.
+
+    Accepts either an object_id (``cam:Camera_01:1``) or an alert_id
+    (``alert-20260506-...``).  Both are stored under ``thumbnail:{key}``
+    in Redis.
+    """
     if _event_repo is None:
         raise HTTPException(status_code=503, detail="Thumbnail service not ready")
 
