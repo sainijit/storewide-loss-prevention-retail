@@ -19,7 +19,7 @@ RUN apt-get update && \
 COPY --from=builder /install /usr/local
 
 # Install performance-tools for metrics logging
-RUN pip install --no-cache-dir git+https://github.com/sumanaga/performance-tools.git@user_log_time#subdirectory=benchmark-scripts
+RUN pip install --no-cache-dir git+https://github.com/sainijit/performance-tools.git@poi-stream-density#subdirectory=benchmark-scripts
 
 WORKDIR /app
 
