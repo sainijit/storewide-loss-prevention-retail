@@ -59,9 +59,10 @@ async def get_alert_count(request: Request) -> Dict[str, int]:
 async def get_sessions(request: Request, include_pending: bool = False) -> List[Dict[str, Any]]:
     """Return active person sessions with per-zone visit summary.
 
-    By default, only sessions whose SceneScape re-id state has reached
-    "matched" are returned, so flickering/transient ghost tracks don't
-    show up in the UI.  Pass ?include_pending=true to see everything.
+    By default, only sessions whose SceneScape re-id state has progressed
+    beyond initial collection are returned, so flickering/transient ghost
+    tracks don't show up in the UI.  Pass ?include_pending=true to see
+    everything (including ``pending_collection`` tracks).
     """
     sm = _get_session_manager(request)
     config = _get_config(request)
@@ -69,7 +70,8 @@ async def get_sessions(request: Request, include_pending: bool = False) -> List[
     if not include_pending:
         sessions = {
             k: s for k, s in sessions.items()
-            if not s.reid_state or s.reid_state == "matched"
+            if not s.reid_state
+            or s.reid_state in ("matched", "query_no_match")
         }
     return [_serialize_session(s, config) for s in sessions.values()]
 
