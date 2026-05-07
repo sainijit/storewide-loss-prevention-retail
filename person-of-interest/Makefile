@@ -99,6 +99,7 @@ download-models:
 
 PERF_TOOLS_DIR := ../performance-tools/benchmark-scripts
 SAD_STREAM_DENSITY := $(PERF_TOOLS_DIR)/sad_stream_density.py
+POI_STREAM_DENSITY := $(PERF_TOOLS_DIR)/poi_stream_density.py
 
 # Benchmark configuration (override via env or docker/.env)
 BENCHMARK_TARGET_LATENCY_MS ?= 2000
@@ -204,6 +205,71 @@ down-stream-density:
 	$(BENCHMARK_VENV) && \
 	python3 $(SAD_STREAM_DENSITY) down $(CURDIR)
 
+# ---- POI Stream Density & Benchmarking ----
+
+.PHONY: poi-benchmark
+poi-benchmark: ## Run a single-scene POI benchmark (detection-to-alert latency)
+	@echo "╔══════════════════════════════════════════════════════════════════╗"
+	@echo "║       POI Benchmark — Single Scene                             ║"
+	@echo "╚══════════════════════════════════════════════════════════════════╝"
+	@echo "  Target Latency: $(BENCHMARK_TARGET_LATENCY_MS)ms"
+	@echo "  Results Dir:    $(RESULTS_PATH)"
+	@echo ""
+	mkdir -p $(RESULTS_PATH)
+	$(BENCHMARK_VENV) && \
+	python3 $(POI_STREAM_DENSITY) run $(CURDIR) \
+		--single_run \
+		--scenes 1 \
+		--target_latency_ms $(BENCHMARK_TARGET_LATENCY_MS) \
+		--latency_metric $(BENCHMARK_LATENCY_METRIC) \
+		--init_duration $(BENCHMARK_INIT_DURATION) \
+		--stabilise_duration $(BENCHMARK_STABILISE_DURATION) \
+		--results_dir $(CURDIR)/$(RESULTS_PATH)
+
+.PHONY: poi-benchmark-stream-density
+poi-benchmark-stream-density: demo ## Iteratively increase scenes until POI latency threshold
+	@echo "╔══════════════════════════════════════════════════════════════════╗"
+	@echo "║       POI Stream Density — Detection-to-Alert Scaling          ║"
+	@echo "╚══════════════════════════════════════════════════════════════════╝"
+	@echo "  Target Latency:   $(BENCHMARK_TARGET_LATENCY_MS)ms"
+	@echo "  Latency Metric:   $(BENCHMARK_LATENCY_METRIC)"
+	@echo "  Scene Increment:  +$(BENCHMARK_SCENE_INCREMENT) per iteration"
+	@echo "  Init Duration:    $(BENCHMARK_INIT_DURATION)s"
+	@echo "  Stabilise:        $(BENCHMARK_STABILISE_DURATION)s"
+	@echo "  Max Iterations:   $(BENCHMARK_MAX_ITERATIONS)"
+	@echo "  Results Dir:      $(RESULTS_PATH)"
+	@echo ""
+	mkdir -p $(RESULTS_PATH)
+	$(BENCHMARK_VENV) && \
+	python3 $(POI_STREAM_DENSITY) run $(CURDIR) \
+		--target_latency_ms $(BENCHMARK_TARGET_LATENCY_MS) \
+		--latency_metric $(BENCHMARK_LATENCY_METRIC) \
+		--scene_increment $(BENCHMARK_SCENE_INCREMENT) \
+		--init_duration $(BENCHMARK_INIT_DURATION) \
+		--stabilise_duration $(BENCHMARK_STABILISE_DURATION) \
+		--max_iterations $(BENCHMARK_MAX_ITERATIONS) \
+		--results_dir $(CURDIR)/$(RESULTS_PATH)
+
+.PHONY: poi-stream-density
+poi-stream-density: poi-benchmark-stream-density ## Alias for poi-benchmark-stream-density
+
+.PHONY: poi-generate-stream-density
+poi-generate-stream-density:
+	@echo "Generating POI stream-density overrides only..."
+	$(BENCHMARK_VENV) && \
+	python3 $(POI_STREAM_DENSITY) generate $(CURDIR)
+	@echo "To start: make demo"
+
+.PHONY: poi-clean-stream-density
+poi-clean-stream-density:
+	$(BENCHMARK_VENV) && \
+	python3 $(POI_STREAM_DENSITY) clean $(CURDIR)
+
+.PHONY: poi-down-stream-density
+poi-down-stream-density:
+	$(BENCHMARK_VENV) && \
+	python3 $(POI_STREAM_DENSITY) down $(CURDIR)
+
 # ---- Build ----
 
 .PHONY: lp-build
@@ -253,7 +319,7 @@ help:
 	@echo "    make demo-lp         - Start LP services only"
 	@echo "    make down-lp         - Stop LP services"
 	@echo ""
-	@echo "  Stream Density & Benchmarking:"
+	@echo "  Stream Density & Benchmarking (SAD):"
 	@echo "    make benchmark                 - Single-scene benchmark (1 scene)"
 	@echo "    make benchmark-stream-density  - Increase scenes until latency threshold"
 	@echo "    make consolidate-metrics       - Consolidate metrics to CSV"
@@ -261,6 +327,14 @@ help:
 	@echo "    make generate-stream-density   - Generate overrides only (no start)"
 	@echo "    make clean-stream-density      - Revert to single camera"
 	@echo "    make down-stream-density       - Stop stream-density services"
+	@echo ""
+	@echo "  Stream Density & Benchmarking (POI):"
+	@echo "    make poi-benchmark                 - Single-scene POI benchmark"
+	@echo "    make poi-benchmark-stream-density  - Increase scenes until POI latency threshold"
+	@echo "    make poi-stream-density            - Alias for poi-benchmark-stream-density"
+	@echo "    make poi-generate-stream-density   - Generate POI overrides only (no start)"
+	@echo "    make poi-clean-stream-density      - Revert POI to single camera"
+	@echo "    make poi-down-stream-density       - Stop POI stream-density services"
 	@echo ""
 	@echo "  Build:"
 	@echo "    make lp-build        - Build LP container images"
