@@ -83,7 +83,7 @@ SCENESCAPE_URL="${API_BASE_URL}"
 CA_CERT="${SCENESCAPE_DIR}/secrets/certs/scenescape-ca.pem"
 CURL_TLS_FLAGS="-k"
 if [ -f "${CA_CERT}" ]; then
-    CURL_TLS_FLAGS="--cacert ${CA_CERT}"
+    CURL_TLS_FLAGS="-k --cacert ${CA_CERT}"
 fi
 
 echo -e "${GREEN}=== SceneScape Scene Import ===${NC}"
