@@ -133,10 +133,53 @@ BENCHMARK_VENV := cd $(PERF_TOOLS_DIR) && \
 	cd $(CURDIR)
 
 .PHONY: benchmark
-benchmark: poi-benchmark ## Alias — runs poi-benchmark (single scene)
+benchmark: _benchmark-enroll ## Single-scene POI benchmark with auto-enroll
+	@$(MAKE) --no-print-directory poi-benchmark; ret=$$?; \
+		$(MAKE) --no-print-directory _benchmark-cleanup; \
+		exit $$ret
 
 .PHONY: benchmark-stream-density
-benchmark-stream-density: poi-benchmark-stream-density ## Alias — runs poi-benchmark-stream-density
+benchmark-stream-density: _benchmark-enroll ## Stream density with auto-enroll
+	@$(MAKE) --no-print-directory poi-benchmark-stream-density; ret=$$?; \
+		$(MAKE) --no-print-directory _benchmark-cleanup; \
+		exit $$ret
+
+# Internal: enroll sample POI before benchmark
+.PHONY: _benchmark-enroll
+_benchmark-enroll:
+	@echo "$(BLUE)=== Enrolling benchmark POI from sample_data ===$(NC)"
+	@for i in 1 2 3 4 5; do \
+		if curl -sf http://localhost:8000/api/v1/status >/dev/null 2>&1; then break; fi; \
+		echo "  Waiting for poi-backend..."; sleep 5; \
+	done
+	@ENROLL_RESP=$$(curl -sf -X POST http://localhost:8000/api/v1/poi \
+		-F "images=@sample_data/poi_1.png" \
+		-F "images=@sample_data/poi_2.JPG" \
+		-F "severity=high" \
+		-F "description=Benchmark POI" 2>&1); \
+	POI_ID=$$(echo "$$ENROLL_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('poi_id',''))" 2>/dev/null); \
+	if [ -n "$$POI_ID" ]; then \
+		echo "  Enrolled POI: $$POI_ID"; \
+		echo "$$POI_ID" > .benchmark_poi_id; \
+	else \
+		echo "$(RED)  Failed to enroll POI: $$ENROLL_RESP$(NC)"; \
+		exit 1; \
+	fi
+
+# Internal: delete benchmark POI and clean data after benchmark
+.PHONY: _benchmark-cleanup
+_benchmark-cleanup:
+	@echo ""
+	@echo "$(BLUE)=== Cleaning up benchmark POI ===$(NC)"
+	@if [ -f .benchmark_poi_id ]; then \
+		POI_ID=$$(cat .benchmark_poi_id); \
+		curl -sf -X DELETE "http://localhost:8000/api/v1/poi/$$POI_ID" >/dev/null 2>&1 && \
+			echo "  Deleted POI: $$POI_ID" || \
+			echo "  POI $$POI_ID already removed"; \
+		rm -f .benchmark_poi_id; \
+	fi
+	@$(MAKE) --no-print-directory clean-data
+	@echo "$(GREEN)  Benchmark cleanup complete$(NC)"
 
 .PHONY: consolidate-metrics
 consolidate-metrics: ## Consolidate benchmark metrics from results/ into a CSV
@@ -441,13 +484,13 @@ log-alert:
 .PHONY: clean-redis
 clean-redis: ## Flush all Redis data (POI metadata, detections, caches)
 	@echo "$(BLUE)=== Flushing Redis ===$(NC)"
-	$(COMPOSE_POI) exec -T redis redis-cli FLUSHALL
+	@docker exec poi-redis redis-cli FLUSHALL
 	@echo "$(GREEN)Redis flushed.$(NC)"
 
 .PHONY: clean-faiss
 clean-faiss: ## Remove FAISS index files and reset detection counter
 	@echo "$(BLUE)=== Cleaning FAISS indexes ===$(NC)"
-	$(COMPOSE_POI) exec -T poi-backend rm -f /data/faiss/poi.index /data/faiss/id_map.json
+	@docker exec poi-backend rm -f /data/faiss/poi.index /data/faiss/id_map.json
 	@echo "$(GREEN)FAISS indexes removed. Restart poi-backend to take effect.$(NC)"
 
 .PHONY: clean-data
