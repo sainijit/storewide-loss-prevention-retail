@@ -98,6 +98,7 @@ class TestAlertPayload:
         assert d["alert_id"] == "alert-001"
         assert d["severity"] == "high"
         assert d["status"] == "New"
+        assert "dispatched_at" in d
 
 
 class TestMovementEvent:

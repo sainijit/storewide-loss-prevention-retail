@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Optional
 
 
@@ -23,15 +24,19 @@ class AlertPayload:
     alert_id: str
     poi_id: str
     severity: str
-    timestamp: str
+    timestamp: str  # MQTT detection timestamp (when camera saw the person)
     match: dict
     poi_metadata: dict
     status: str = "New"
+    dispatched_at: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="milliseconds")
+    )
 
     def to_dict(self) -> dict:
         return {
             "event_type": "poi_match_alert",
             "timestamp": self.timestamp,
+            "dispatched_at": self.dispatched_at,
             "alert_id": self.alert_id,
             "poi_id": self.poi_id,
             "severity": self.severity,
