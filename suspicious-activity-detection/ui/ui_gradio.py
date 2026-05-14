@@ -13,6 +13,7 @@ from collections import deque
 import paho.mqtt.client as mqtt
 from PIL import Image, ImageDraw, ImageFont
 
+
 # Use Docker service name for container-to-container communication
 LP_BASE_URL = os.environ.get("LP_BASE_URL", "http://storewide-loss-prevention:8082")
 ZONES_API = f"{LP_BASE_URL}/api/v1/lp/zones"
@@ -165,7 +166,7 @@ def _render_frame():
 
 
     # Resize to 640x360 for faster browser transfer
-    img = img.resize((640, 360), Image.LANCZOS)
+    img = img.resize((640, 360), Image.BILINEAR)
     scale_x = 640 / 1920
     scale_y = 360 / 1080
 
@@ -205,15 +206,23 @@ def _render_frame():
         _rendered_frame = img
 
 
-def get_annotated_frame(camera_id="lp-camera1"):
-    """Return the pre-rendered annotated frame (renders lazily on demand)."""
-    global _frame_dirty
-    # Render on demand (driven by UI poll timer), not on every MQTT message.
-    # This caps rendering to once per poll interval regardless of frame rate.
-    try:
-        _render_frame()
-    except Exception as e:
-        print(f"[UI] Render error: {e}")
+# ── Background render thread ──────────────────────────────────────────────────
+def _render_loop():
+    """Background thread: render at ~10 FPS."""
+    while True:
+        try:
+            _render_frame()
+        except Exception as e:
+            print(f"[Render] error: {e}")
+        time.sleep(0.1)  # ~10 FPS cap
+
+
+_render_thread = threading.Thread(target=_render_loop, daemon=True)
+_render_thread.start()
+
+
+def _get_rendered_pil():
+    """Return the latest rendered frame as PIL Image for Gradio."""
     with _rendered_lock:
         frame = _rendered_frame
     if frame is not None:
@@ -226,6 +235,7 @@ def get_annotated_frame(camera_id="lp-camera1"):
     text_h = bbox[3] - bbox[1]
     draw.text(((640 - text_w) / 2, (360 - text_h) / 2), text, fill=(180, 180, 180), font=_FONT)
     return img
+
 
 def get_scene_name():
     try:
@@ -283,13 +293,25 @@ def get_sessions():
                 scene_name = session.get("scene_name", "")
                 zone_summary = session.get("zone_summary", [])
                 if zone_summary:
+                    # Check if person's first zone entry was CHECKOUT
+                    first_zone_is_checkout = (
+                        zone_summary[0].get("zone_type", "").upper() == "CHECKOUT"
+                    )
                     for z in zone_summary:
+                        zone_name = z.get("zone_name", "?")
+                        zone_type = z.get("zone_type", "?")
+                        visit_count = z.get("visit_count", 0)
+                        # If first zone event was CHECKOUT, subtract 1 from its count
+                        if first_zone_is_checkout and zone_type.upper() == "CHECKOUT":
+                            visit_count -= 1
+                            if visit_count <= 0:
+                                continue
                         rows.append({
                             "Person": person_id,
                             "Scene": scene_name,
-                            "Zone": z.get("zone_name", "?"),
-                            "Type": z.get("zone_type", "?"),
-                            "Visits": z.get("visit_count", 0),
+                            "Zone": zone_name,
+                            "Type": zone_type,
+                            "Visits": visit_count,
                         })
             if rows:
                 _cached_sessions = pd.DataFrame(rows)
@@ -358,8 +380,6 @@ def get_alert_summary():
     except Exception:
         return _cached_alert_summary
 
-def refresh_data():
-    return get_annotated_frame(), get_zones(), get_sessions(), get_alerts(), get_alert_summary()
 
 HEADER_HTML = """
 <div style="
@@ -490,16 +510,22 @@ with gr.Blocks(title="Storewide Loss Prevention Dashboard") as demo:
             gr.HTML('<div class="panel-card"><div class="panel-title">All Alerts</div></div>')
             alerts_table = gr.Dataframe(interactive=False, max_height=250)
 
-    # Auto-poll every 1 second (balanced: responsive UI without overloading backend)
-    timer = gr.Timer(1.0)
-    timer.tick(
-        fn=refresh_data,
+    # Auto-poll: fast timer for video, slower timer for data tables
+    video_timer = gr.Timer(0.2)
+    video_timer.tick(
+        fn=_get_rendered_pil,
         inputs=[],
-        outputs=[live_video, zones_table, sessions_table, alerts_table, alert_summary_table],
+        outputs=[live_video],
+    )
+    data_timer = gr.Timer(2.0)
+    data_timer.tick(
+        fn=lambda: (get_zones(), get_sessions(), get_alerts(), get_alert_summary()),
+        inputs=[],
+        outputs=[zones_table, sessions_table, alerts_table, alert_summary_table],
     )
 
     demo.load(
-        fn=refresh_data,
+        fn=lambda: (_get_rendered_pil(), get_zones(), get_sessions(), get_alerts(), get_alert_summary()),
         inputs=[],
         outputs=[live_video, zones_table, sessions_table, alerts_table, alert_summary_table],
     )
