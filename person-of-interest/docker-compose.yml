@@ -26,6 +26,7 @@ services:
       - ENROLL_FACE_PADDING=0.0
       - ENROLL_FACE_SQUARE=false
       - ENROLL_EMBEDDING_STRATEGY=mean
+      - MEDIAMTX_WEBRTC_PORT=8889
     volumes:
       - faiss-data:/data/faiss
       - ./data/uploads:/data/uploads
