@@ -7,6 +7,17 @@ import threading
 from dataclasses import dataclass, field
 
 
+def _parse_stream_map(raw: str) -> dict:
+    """Parse 'Camera_01:retail-cam1,Camera_02:retail-cam2' into a dict."""
+    mapping = {}
+    for pair in raw.split(","):
+        pair = pair.strip()
+        if ":" in pair:
+            cam_id, stream = pair.split(":", 1)
+            mapping[cam_id.strip()] = stream.strip()
+    return mapping
+
+
 @dataclass
 class Config:
     """Centralised, immutable application config loaded from env vars.
@@ -70,6 +81,7 @@ class Config:
     # Camera / RTSP / MediaMTX
     rtsp_base_url: str = "rtsp://mediaserver:8554"
     camera_streams: str = ""  # comma-separated: "Camera_01,Camera_02"
+    camera_stream_map: dict = field(default_factory=dict)  # camera_id → mediamtx stream path
     mediamtx_webrtc_port: int = 8889
 
     # Logging
@@ -152,6 +164,7 @@ class Config:
             log_level=os.getenv("LOG_LEVEL", "INFO"),
             rtsp_base_url=os.getenv("RTSP_BASE_URL", "rtsp://mediaserver:8554"),
             camera_streams=os.getenv("RTSP_PREWARM_CAMERAS", ""),
+            camera_stream_map=_parse_stream_map(os.getenv("CAMERA_STREAM_MAP", "")),
             mediamtx_webrtc_port=int(os.getenv("MEDIAMTX_WEBRTC_PORT", "8889")),
             object_cache_ttl=int(os.getenv("OBJECT_CACHE_TTL", "300")),
             alert_dedup_ttl=int(os.getenv("ALERT_DEDUP_TTL", "300")),

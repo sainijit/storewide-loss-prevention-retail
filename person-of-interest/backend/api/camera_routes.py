@@ -35,10 +35,11 @@ def _cameras_from_config() -> list[dict]:
     for cam_id in raw.split(","):
         cam_id = cam_id.strip()
         if cam_id:
+            stream_path = cfg.camera_stream_map.get(cam_id, cam_id)
             cameras.append({
                 "camera_id": cam_id,
                 "name": cam_id.replace("_", " ").replace("-", " ").title(),
-                "stream_path": cam_id,
+                "stream_path": stream_path,
                 "status": "active",
             })
     return cameras
