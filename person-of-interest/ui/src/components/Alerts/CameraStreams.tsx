@@ -19,9 +19,7 @@ const CameraStreams = () => {
     try {
       const data = await fetchCameras();
       setCameras(data.cameras);
-      if (data.mediamtx_webrtc_port) {
-        setWebrtcPort(data.mediamtx_webrtc_port);
-      }
+      setWebrtcPort(data.mediamtx_webrtc_port);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load cameras');
@@ -39,8 +37,9 @@ const CameraStreams = () => {
   }, [loadCameras]);
 
   const playerUrl = (streamPath: string): string => {
+    const protocol = window.location.protocol;
     const host = window.location.hostname;
-    return `http://${host}:${webrtcPort}/${streamPath}/`;
+    return `${protocol}//${host}:${webrtcPort}/${streamPath}/`;
   };
 
   return (

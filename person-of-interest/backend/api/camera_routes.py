@@ -46,13 +46,16 @@ def _cameras_from_config() -> list[dict]:
 
 
 @router.get("")
-async def list_cameras():
+def list_cameras():
     """List all cameras with stream metadata.
 
     Returns cameras from SceneScape API when available,
     otherwise falls back to configured camera list.
     Each camera includes a ``stream_path`` for building
     the MediaMTX WebRTC player URL on the client side.
+
+    Declared as sync ``def`` so FastAPI runs the synchronous
+    SceneScape adapter calls in its threadpool executor.
     """
     cfg = get_config()
 
@@ -80,8 +83,11 @@ async def list_cameras():
 
 
 @router.get("/{camera_id}")
-async def get_camera(camera_id: str):
-    """Get a single camera from SceneScape."""
+def get_camera(camera_id: str):
+    """Get a single camera from SceneScape.
+
+    Sync handler — adapter performs blocking I/O.
+    """
     camera = _scenescape_adapter.get_camera(camera_id) if _scenescape_adapter else None
     if camera is None:
         # Check config fallback

@@ -398,14 +398,7 @@ up:
 		echo "$(BLUE)=== Creating .env from .env.example ===$(NC)"; \
 		cp .env.example .env; \
 	fi
-	@# Ensure storewide-lp network exists with correct compose labels
-	@if docker network inspect storewide-lp >/dev/null 2>&1; then \
-		LABEL=$$(docker network inspect storewide-lp --format '{{index .Labels "com.docker.compose.network"}}' 2>/dev/null); \
-		if [ -z "$$LABEL" ]; then \
-			echo "$(BLUE)=== Recreating storewide-lp network with correct labels ===$(NC)"; \
-			docker network rm storewide-lp 2>/dev/null || true; \
-		fi; \
-	fi
+	@# Ensure storewide-lp network exists (compose will attach to it)
 	@docker network inspect storewide-lp >/dev/null 2>&1 || \
 		(echo "$(BLUE)=== Creating storewide-lp network ===$(NC)" && docker network create storewide-lp)
 	@echo "$(BLUE)=== Starting SceneScape services ===$(NC)"
