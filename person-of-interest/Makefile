@@ -395,9 +395,11 @@ build:
 	@echo ""
 	@echo "$(BLUE)=== Building POI images ===$(NC)"
 ifeq ($(REGISTRY),false)
-	$(COMPOSE_POI) build poi-backend ui
+	POI_BACKEND_IMAGE=person-of-interest-poi-backend POI_UI_IMAGE=person-of-interest-ui \
+		$(COMPOSE_POI) build poi-backend ui
 else
-	$(COMPOSE_POI) build poi-backend ui
+	POI_BACKEND_IMAGE=person-of-interest-poi-backend POI_UI_IMAGE=person-of-interest-ui \
+		$(COMPOSE_POI) build poi-backend ui
 	docker tag person-of-interest-poi-backend $(REGISTRY)/poi-backend:latest
 	docker tag person-of-interest-ui $(REGISTRY)/poi-ui:latest
 endif
