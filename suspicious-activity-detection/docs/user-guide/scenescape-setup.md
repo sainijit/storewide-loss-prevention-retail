@@ -45,6 +45,29 @@ SceneScape reads its configuration from the application's `configs/` directory:
 | `configs/.env.example` | Reference environment variables including `SCENESCAPE_REGISTRY`, `SCENESCAPE_VERSION`, and model/device settings. |
 | `configs/res/*.env` | Device resource profiles that control inference device, decode chain, and throughput options. |
 
+## Scene Definition
+
+A scene `.zip` archive must be placed in `scenescape/webserver/` before
+running `make up`. The filename must match the
+`scene_zip` value in `configs/zone_config.json`:
+
+```json
+"scene_name": "storewide loss prevention",
+"scene_zip": "storewide-loss-prevention.zip",
+"camera_name": "lp-camera1",
+```
+
+This archive defines the scene in SceneScape and contains:
+
+- A floor plan image
+- Zone polygon definitions (regions of interest)
+- Camera calibration data
+
+On first startup, the import script (`scenescape/webserver/scene-import.sh`)
+waits for the controller to become healthy, then uploads all `.zip` files
+from that directory to create the scene, zones, and camera configuration
+inside SceneScape.
+
 ## Initialization
 
 The `scenescape/scripts/init.sh` script performs the following steps:
@@ -102,11 +125,13 @@ The DLStreamer pipeline server supports multiple inference device
 configurations. Select a profile via the `DEVICE` parameter:
 
 ```bash
-make up DEVICE=all-gpu-cpu.env    # GPU detect + CPU re-id 
-make up DEVICE=all-gpu.env        # All GPU
-make up DEVICE=all-cpu.env        # All CPU
-make up DEVICE=all-npu-cpu.env    # NPU detect + CPU re-id
-make up DEVICE=all-npu.env        # All NPU (default)
+ DEVICE=all-gpu-cpu.env    # GPU detect + CPU re-id 
+ DEVICE=all-gpu.env        # All GPU
+ DEVICE=all-cpu.env        # All CPU
+ DEVICE=all-npu-cpu.env    # NPU detect + CPU re-id
+ DEVICE=all-npu.env        # All NPU (default)
+
+ example: make up EVICE=all-gpu-cpu.env
 ```
 
 Profiles are defined in `configs/res/` and control:
@@ -116,65 +141,73 @@ Profiles are defined in `configs/res/` and control:
 - Pre-process backend
 - Throughput and batching options
 
-## Running SceneScape Independently
+## Prerequisites
 
-To start only the SceneScape stack (without LP services), run from the
-`suspicious-activity-detection/` directory:
+Before running SceneScape, ensure the following steps are completed:
+
+### 1. Download Sample Video
+
+Download the sample video defined in `configs/zone_config.json`:
 
 ```bash
 cd suspicious-activity-detection/
-make run-scenescape
+make download-sample-data
 ```
 
-> **Note:** `APP_DIR` is passed automatically by the application's Makefile.
-> Always run this command from the `suspicious-activity-detection/` directory.
+This downloads the video from the `video_url` and saves it as `video_file`
+(e.g., `lp-camera1.mp4`) into `scenescape/sample_data/`.
 
-Alternatively, you can run directly from the `scenescape/` directory by
-passing `APP_DIR` explicitly:
+### 2. Download AI Models
+
+Download the OpenVINO detection and re-identification models:
 
 ```bash
-cd scenescape/
-make run APP_DIR=$(realpath ../suspicious-activity-detection)
+make download-models
 ```
 
-To stop SceneScape:
+This downloads person-detection and person-reidentification models into the
+`models/` directory.
+
+### 3. Verify Scene Archive
+
+Ensure the scene `.zip` file exists at `scenescape/webserver/` with the
+filename matching `scene_zip` in `configs/zone_config.json`.
+
+## Running the Stack
+
+To start the full stack (SceneScape + LP services + model mounts), run from
+the `suspicious-activity-detection/` directory:
 
 ```bash
-# From suspicious-activity-detection/
-make down-scenescape
-
-# Or from scenescape/
-make down APP_DIR=$(realpath ../suspicious-activity-detection)
+cd suspicious-activity-detection/
+make up
 ```
 
-## Scene Import
+`make up` automatically performs initialization (`init.sh`), downloads
+sample data and models, creates Docker volumes, and starts all services
+including SceneScape infrastructure and the LP detection pipeline.
 
-On first startup, SceneScape automatically imports scene definitions from
-`.zip` files located in `scenescape/webserver/`. The import script
-(`scenescape/webserver/scene-import.sh`) waits for the controller to become
-healthy, then uploads each `.zip` file.
+The app-level Docker Compose overlay
+([docker/docker-compose.yaml](../../docker/docker-compose.yaml)) mounts
+the detection and re-identification models into the DLStreamer container:
 
-The scene archive contains:
+```yaml
+volumes:
+  - ${MODEL_PATH:-./models}/detect_models:/home/pipeline-server/models/detect:ro
+  - ${MODEL_PATH:-./models}/reid_models:/home/pipeline-server/models/reid:ro
+```
 
-- A floor plan image
-- Zone polygon definitions (regions of interest)
-- Camera calibration data
+To stop the full stack:
+
+```bash
+make down
+```
 
 ## Re-Identification (ReID)
 
 SceneScape tracks persons across frames and camera views using a
 re-identification model. The ReID descriptor store uses VDMS (Vector Data
 Management System).
-
-If ReID tracking stops working (persons are not re-identified across zone
-entries), reset the VDMS descriptor schema:
-
-```bash
-make fix-reid
-```
-
-This wipes the corrupt descriptor set and graph metadata, then restarts the
-controller so it recreates the schema cleanly.
 
 
 ## MQTT Authentication
