@@ -413,8 +413,8 @@ up:
 	@if docker network inspect storewide-lp >/dev/null 2>&1 && \
 	   [ "$$(docker network inspect storewide-lp --format '{{index .Labels "com.docker.compose.network"}}')" != "storewide-lp" ]; then \
 		echo "$(BLUE)=== Removing stale storewide-lp network (missing Compose labels) ===$(NC)"; \
-		-$(COMPOSE_POI) down 2>/dev/null || true; \
-		-docker network rm storewide-lp 2>/dev/null || true; \
+		$(COMPOSE_POI) down 2>/dev/null || true; \
+		docker network rm storewide-lp 2>/dev/null || true; \
 	fi
 	@# Let SceneScape Compose create and label storewide-lp before POI attaches to it
 	@echo "$(BLUE)=== Starting SceneScape services ===$(NC)"

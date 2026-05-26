@@ -2,7 +2,7 @@
 FROM node:20-alpine AS builder
 
 # Patch Alpine OS-level packages (libssl3, libcrypto3, libxml2 CVEs)
-RUN apk update && apk upgrade --no-cache
+RUN apk upgrade --no-cache
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ RUN npm run build
 FROM nginx:1.27-alpine
 
 # Patch Alpine OS-level packages (libssl3, libcrypto3, libxml2 CVEs)
-RUN apk update && apk upgrade --no-cache
+RUN apk upgrade --no-cache
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 
