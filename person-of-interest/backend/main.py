@@ -67,6 +67,11 @@ async def lifespan(app: FastAPI):
     event_repo = RedisEventRepository()
     mapping_repo = RedisEmbeddingMappingRepository()
 
+    # Reconcile FAISS with Redis — prune stale vectors from previous deploys
+    # where Redis was wiped (volume removed) but FAISS bind-mount persisted.
+    valid_poi_ids = {p.poi_id for p in poi_repo.list_all()}
+    faiss_repo.reconcile(valid_poi_ids)
+
     log.info("Initializing detection index...")
     import redis as _redis_mod
     # decode_responses=False — DetectionIndexRepository stores raw float32 bytes for vectors

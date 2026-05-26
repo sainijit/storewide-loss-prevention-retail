@@ -69,6 +69,27 @@ class FAISSRepository(EmbeddingRepository):
         index = faiss.IndexIDMap(flat)
         return index
 
+    def reconcile(self, valid_poi_ids: set[str]) -> None:
+        """Remove FAISS vectors whose poi_id no longer exists in Redis.
+
+        Called at startup to prune stale vectors left from previous
+        deployments where Redis was wiped but the FAISS bind-mount persisted.
+        """
+        stale_fids = [fid for fid, pid in self._id_map.items()
+                      if pid not in valid_poi_ids]
+        if not stale_fids:
+            return
+        stale_pois = {self._id_map[fid] for fid in stale_fids}
+        log.warning(
+            "Removing %d stale FAISS vectors for %d orphaned POI(s): %s",
+            len(stale_fids), len(stale_pois), stale_pois,
+        )
+        with self._search_lock:
+            self._index.remove_ids(np.array(stale_fids, dtype=np.int64))
+        for fid in stale_fids:
+            del self._id_map[fid]
+        self.save_to_disk()
+
     def add(self, poi_id: str, vectors: list[np.ndarray]) -> list[int]:
         ids_assigned = []
         vecs = []

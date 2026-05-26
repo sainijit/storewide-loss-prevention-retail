@@ -121,6 +121,13 @@ PERF_TOOLS_DIR := ../performance-tools/benchmark-scripts
 SAD_STREAM_DENSITY := $(PERF_TOOLS_DIR)/sad_stream_density.py
 POI_STREAM_DENSITY := $(PERF_TOOLS_DIR)/poi_stream_density.py
 
+# Load benchmark vars from docker/.env (if it exists) so values like
+# BENCHMARK_TARGET_LATENCY_MS, BENCHMARK_INIT_DURATION etc. are picked up.
+# Only BENCHMARK_* lines are extracted to avoid parsing issues with other values.
+ifneq (,$(wildcard docker/.env))
+$(foreach line,$(shell grep '^BENCHMARK_' docker/.env 2>/dev/null),$(eval $(line)))
+endif
+
 # Benchmark configuration (override via env or docker/.env)
 BENCHMARK_TARGET_LATENCY_MS ?= 30000
 BENCHMARK_LATENCY_METRIC ?= avg
@@ -172,6 +179,8 @@ _benchmark-fresh-start:
 	@$(MAKE) --no-print-directory down 2>/dev/null || true
 	@echo "$(BLUE)=== Removing POI Compose volumes ===$(NC)"
 	@$(COMPOSE_POI) down -v --remove-orphans 2>/dev/null || true
+	@echo "$(BLUE)=== Clearing stale FAISS index ===$(NC)"
+	@rm -f data/faiss/poi.index data/faiss/id_map.json
 	@echo "$(BLUE)=== Initializing with DEVICE=$(DEVICE) ===$(NC)"
 	@$(MAKE) --no-print-directory init
 
@@ -477,6 +486,8 @@ up:
 			docker volume rm storewide-lp_vol-db storewide-lp_vol-migrations 2>/dev/null && \
 				echo "  Removed storewide-lp_vol-db and storewide-lp_vol-migrations" || true; \
 		fi; \
+		echo "$(BLUE)=== Clearing stale FAISS index (fresh deployment) ===$(NC)"; \
+		rm -f data/faiss/poi.index data/faiss/id_map.json; \
 	fi
 	@# Validate HOST_IP is set — required for WebRTC ICE candidates (camera streams)
 	@HOST_IP_VAL="$$(grep -E '^HOST_IP=.+' docker/.env 2>/dev/null | cut -d= -f2-)"; \
