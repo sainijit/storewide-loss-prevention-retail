@@ -44,6 +44,9 @@ source, see [Get Started](./docs/user-guide/get-started.md).
 - **Technical Reference**
   - [MQTT Pipeline Design](./docs/user-guide/mqtt-pipeline-design.md): Deep dive into the MQTT data flow, embedding pipeline, and Redis data model.
 
+- **Benchmarking**
+  - [Benchmarking Guide](./docs/user-guide/get-started.md#benchmarking): Single-scene latency, stream density scaling, metrics consolidation, and plotting.
+
 - **API Reference**
   - [API Reference](./docs/user-guide/api-reference.md): Comprehensive reference for the REST API endpoints.
 

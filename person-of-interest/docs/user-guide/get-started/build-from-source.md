@@ -112,6 +112,7 @@ make status
 | `make benchmark`             | Single-scene latency benchmark                   |
 | `make benchmark-stream-density` | Iterative stream density benchmark            |
 | `make consolidate-metrics`   | Consolidate benchmark metrics to CSV             |
+| `make plot-metrics`          | Generate plots from benchmark metrics            |
 | `make test`                  | Run backend unit tests                           |
 | `make coverage`              | Run tests with coverage report                   |
 | `make coverage-html`         | Generate HTML coverage report                    |
