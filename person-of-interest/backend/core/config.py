@@ -30,6 +30,7 @@ class Config:
     mqtt_port: int = 1883
     mqtt_topic_event: str = ""
     mqtt_ca_cert: str = ""
+    mqtt_tls_insecure: bool = True  # skip hostname verification (self-signed certs)
     scene_uid: str = ""
 
     # Redis
@@ -55,7 +56,7 @@ class Config:
 
     # Thresholds
     similarity_threshold: float = 0.6
-    search_similarity_threshold: float = 0.65
+    search_similarity_threshold: float = 0.60
     search_top_k: int = 10
 
     # Embedding / OpenVINO
@@ -126,6 +127,7 @@ class Config:
             mqtt_port=int(os.getenv("MQTT_PORT", "1883")),
             mqtt_topic_event=mqtt_topic,
             mqtt_ca_cert=os.getenv("MQTT_CA_CERT", ""),
+            mqtt_tls_insecure=os.getenv("MQTT_TLS_INSECURE", "true").lower() in ("true", "1", "yes"),
             scene_uid=scene_uid,
             redis_host=os.getenv("REDIS_HOST", "localhost"),
             redis_port=int(os.getenv("REDIS_PORT", "6379")),
@@ -139,7 +141,7 @@ class Config:
             detection_embeddings_per_track=int(os.getenv("DETECTION_EMBEDDINGS_PER_TRACK", "5")),
             detection_embedding_interval=int(os.getenv("DETECTION_EMBEDDING_INTERVAL", "10")),
             similarity_threshold=float(os.getenv("SIMILARITY_THRESHOLD", "0.6")),
-            search_similarity_threshold=float(os.getenv("SEARCH_SIMILARITY_THRESHOLD", "0.65")),
+            search_similarity_threshold=float(os.getenv("SEARCH_SIMILARITY_THRESHOLD", "0.60")),
             search_top_k=int(os.getenv("SEARCH_TOP_K", "10")),
             model_base=model_base,
             det_model=os.getenv(
