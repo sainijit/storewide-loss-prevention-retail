@@ -329,6 +329,17 @@ def frame_to_base64_jpeg(image: np.ndarray, quality: int = 80) -> Optional[str]:
     return base64.b64encode(buf.tobytes()).decode("ascii")
 
 
+def base64_to_frame(b64: str) -> Optional[np.ndarray]:
+    """Decode a base64 JPEG string back to a numpy BGR image."""
+    try:
+        raw = base64.b64decode(b64)
+        buf = np.frombuffer(raw, dtype=np.uint8)
+        frame = cv2.imdecode(buf, cv2.IMREAD_COLOR)
+        return frame if frame is not None and frame.size > 0 else None
+    except Exception:
+        return None
+
+
 def capture_thumbnail(camera_id: str, bbox: Optional[dict], timestamp: str = "") -> Optional[str]:
     """Return a base64 JPEG for camera_id at the detection moment.
 

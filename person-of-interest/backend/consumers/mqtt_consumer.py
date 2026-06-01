@@ -43,7 +43,7 @@ from backend.observer.events import EventBus, MatchFoundEvent
 from backend.service.alert_service import AlertService
 from backend.service.event_service import EventService
 from backend.service.matching_service import MatchingService
-from backend.utils.thumbnail import grab_frame_now, submit_capture
+from backend.utils.thumbnail import grab_frame_now, submit_capture, base64_to_frame, crop_bbox, frame_to_base64_jpeg
 
 log = logging.getLogger("poi.consumer")
 
@@ -491,6 +491,15 @@ class EventConsumer:
         thumbnail_path = ""
         if camera_id and self._event_repo and self._event_repo.claim_thumbnail(object_id, ttl=30):
             b64 = grab_frame_now(camera_id, timestamp)
+            if b64 is not None and bounding_box:
+                # The MQTT frame has ALL persons' red bounding boxes burned in by
+                # sscape_adapter.annotateObjects().  Crop to just the matched
+                # person so the alert shows only the relevant detection.
+                frame = base64_to_frame(b64)
+                if frame is not None:
+                    cropped = crop_bbox(frame, bounding_box)
+                    if cropped is not None and cropped.size > 0:
+                        b64 = frame_to_base64_jpeg(cropped)
             if b64 is None:
                 # MQTT ring buffer empty — fall back to async RTSP capture
                 future = submit_capture(camera_id, bounding_box, timestamp)
