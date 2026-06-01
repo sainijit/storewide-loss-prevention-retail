@@ -499,7 +499,7 @@ class EventConsumer:
                 if frame is not None:
                     cropped = crop_bbox(frame, bounding_box)
                     if cropped is not None and cropped.size > 0:
-                        b64 = frame_to_base64_jpeg(cropped)
+                        b64 = frame_to_base64_jpeg(cropped) or b64
             if b64 is None:
                 # MQTT ring buffer empty — fall back to async RTSP capture
                 future = submit_capture(camera_id, bounding_box, timestamp)

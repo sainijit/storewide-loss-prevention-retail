@@ -126,6 +126,7 @@ class POIService:
         if self._cache_repo is None:
             return
         try:
+            import json as _json
             r = self._cache_repo._r  # type: ignore[attr-defined]
             flushed = 0
             for prefix in ("sticky_poi:", "object:"):
@@ -134,7 +135,16 @@ class POIService:
                     cursor, keys = r.scan(cursor, match=f"{prefix}*", count=200)
                     for key in keys:
                         raw = r.get(key)
-                        if raw and poi_id in (raw.decode() if isinstance(raw, bytes) else raw):
+                        if not raw:
+                            continue
+                        text = raw.decode() if isinstance(raw, bytes) else raw
+                        try:
+                            data = _json.loads(text)
+                            cached_poi = data.get("poi_id") if isinstance(data, dict) else None
+                        except (ValueError, TypeError):
+                            # Legacy colon-separated format: "poi_id:similarity"
+                            cached_poi = text.split(":", 1)[0] if ":" in text else text
+                        if cached_poi == poi_id:
                             r.delete(key)
                             flushed += 1
                     if cursor == 0:
