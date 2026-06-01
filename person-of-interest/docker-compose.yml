@@ -18,14 +18,14 @@ services:
       - PYTHONPATH=/app
       - ALERT_SERVICE_URL=http://poi-alert-service:8000
       - DELIVERY_HANDLERS=log,alert_service
-      - ALERT_DEDUP_TTL=60
+      # ALERT_DEDUP_TTL, OBJECT_CACHE_TTL, SIMILARITY_THRESHOLD,
+      # SEARCH_SIMILARITY_THRESHOLD are injected via env_file (.env below).
+      # Do NOT override them here — environment: takes precedence over env_file
+      # and would prevent .env edits from taking effect.
       - RTSP_BASE_URL=rtsp://mediaserver:8554
       - RTSP_PREWARM_CAMERAS=Camera_01,Camera_02
       - CAMERA_STREAM_MAP=${CAMERA_STREAM_MAP:-Camera_01:Camera_01,Camera_02:Camera_02}
       - MQTT_IMAGE_CAMERAS=Camera_01,Camera_02
-      - SIMILARITY_THRESHOLD=${SIMILARITY_THRESHOLD:-0.50}
-      - SEARCH_SIMILARITY_THRESHOLD=${SEARCH_SIMILARITY_THRESHOLD:-0.60}
-      - OBJECT_CACHE_TTL=5
       - ENROLL_FACE_PADDING=0.0
       - ENROLL_FACE_SQUARE=false
       - ENROLL_EMBEDDING_STRATEGY=mean

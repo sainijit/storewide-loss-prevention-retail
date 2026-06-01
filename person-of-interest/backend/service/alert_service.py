@@ -47,10 +47,15 @@ class AlertService:
     def _on_match_found(self, event: MatchFoundEvent) -> None:
         """Observer callback when a POI match is found."""
         poi_id = event.alert.poi_id
-        dedup_key = f"{event.object_id}:{poi_id}"
-        # Idempotent: check if alert already sent for this object+POI pair
+        # Dedup key is per-object only (NOT per object+poi).
+        # Using {object_id}:{poi_id} would allow the same physical person to fire
+        # separate alerts for different POIs if the cache expires and FAISS returns
+        # a different top-1 result on re-query (embedding instability across frames).
+        # One object_id = one alert per dedup window, regardless of which POI matched.
+        dedup_key = event.object_id
+        # Idempotent: check if alert already sent for this object in this window
         if self._event_repo.is_alert_sent(dedup_key):
-            log.debug("Alert already sent for object=%s poi=%s, skipping", event.object_id, poi_id)
+            log.debug("Alert already sent for object=%s (matched poi=%s), skipping", event.object_id, poi_id)
             return
 
         # Log start time for performance metrics — uses the DLStreamer frame
