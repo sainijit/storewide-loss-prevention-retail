@@ -119,10 +119,8 @@ export no_proxy=$NO_PROXY
 
 ```bash
 # Set HOST_IP (required for WebRTC camera streams)
-export HOST_IP=$(hostname -I | awk '{print $1}')
 
-# Or set a specific IP if the auto-detected one is not correct:
-# export HOST_IP=192.168.1.100
+export HOST_IP=<IP>
 
 # Edit the configuration file with your camera and scene details
 nano configs/zone_config.json

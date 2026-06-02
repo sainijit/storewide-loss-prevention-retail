@@ -205,7 +205,7 @@ make up
   before running `make init`:
 
   ```bash
-  export HOST_IP=$(hostname -I | awk '{print $1}')
+  export HOST_IP=<IP>
   make init
   make up
   ```
