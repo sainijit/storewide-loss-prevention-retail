@@ -232,7 +232,7 @@ _benchmark-fresh-start:
 	@echo "$(BLUE)=== Clearing stale results ===$(NC)"
 	@mkdir -p $(RESULTS_PATH)
 	@if [ "$$(stat -c '%U' $(RESULTS_PATH) 2>/dev/null)" != "$$(id -un)" ]; then \
-		docker run --rm -v "$(CURDIR)/$(RESULTS_PATH)":/r alpine:3.20 \
+		docker run --rm -v "$(CURDIR)/$(RESULTS_PATH)":/r debian:bookworm-slim \
 			chown -R "$$(id -u):$$(id -g)" /r; \
 	fi
 	@rm -f $(RESULTS_PATH)/cpu_usage.log $(RESULTS_PATH)/memory_usage.log \
@@ -344,7 +344,7 @@ poi-benchmark: ## Run a single-scene POI benchmark (detection-to-alert latency)
 	@# Fix ownership if results/ was created by a Docker container (root-owned).
 	@# Uses docker run (no sudo needed) to chown inside a container that has access.
 	@if [ "$$(stat -c '%U' $(RESULTS_PATH) 2>/dev/null)" != "$$(id -un)" ]; then \
-		docker run --rm -v "$(CURDIR)/$(RESULTS_PATH)":/r alpine:3.23 \
+		docker run --rm -v "$(CURDIR)/$(RESULTS_PATH)":/r debian:bookworm-slim \
 			chown -R "$(shell id -u):$(shell id -g)" /r && \
 		echo "  Fixed ownership of $(RESULTS_PATH)"; \
 	fi
@@ -378,7 +378,7 @@ poi-benchmark-stream-density: ## Iteratively increase scenes until POI latency t
 	@# Fix ownership if results/ was created by a Docker container (root-owned).
 	@# Uses docker run (no sudo needed) to chown inside a container that has access.
 	@if [ "$$(stat -c '%U' $(RESULTS_PATH) 2>/dev/null)" != "$$(id -un)" ]; then \
-		docker run --rm -v "$(CURDIR)/$(RESULTS_PATH)":/r alpine:3.23 \
+		docker run --rm -v "$(CURDIR)/$(RESULTS_PATH)":/r debian:bookworm-slim \
 			chown -R "$(shell id -u):$(shell id -g)" /r && \
 		echo "  Fixed ownership of $(RESULTS_PATH)"; \
 	fi
