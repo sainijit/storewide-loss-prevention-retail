@@ -169,10 +169,20 @@ class RedisEventRepository(EventRepository):
 
     def store_alert(self, alert: dict) -> None:
         alert_id = alert.get("alert_id", "")
+        poi_id = alert.get("poi_id", "")
         self._r.lpush("alerts:recent", json.dumps(alert))
         self._r.ltrim("alerts:recent", 0, 999)
         self._r.set(f"alert:{alert_id}", json.dumps(alert))
         self._r.expire(f"alert:{alert_id}", self._cfg.appearance_ttl_days * 86400)
+        # Maintain per-POI alert counter for accurate "previous matches" count
+        if poi_id:
+            self._r.incr(f"alerts:count:{poi_id}")
+            self._r.expire(f"alerts:count:{poi_id}", self._cfg.appearance_ttl_days * 86400)
+
+    def get_alert_count_for_poi(self, poi_id: str) -> int:
+        """Return the number of alerts stored for a POI."""
+        val = self._r.get(f"alerts:count:{poi_id}")
+        return int(val) if val else 0
 
     def get_recent_alerts(self, limit: int = 50) -> list[dict]:
         raw_list = self._r.lrange("alerts:recent", 0, limit - 1)
