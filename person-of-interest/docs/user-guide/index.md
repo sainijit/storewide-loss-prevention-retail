@@ -35,8 +35,6 @@ processing stays local.
   face re-identification embeddings for unified tracking.
 - **Region-Based Analytics:** Tracks entry, exit, and dwell time per store zone (aisles,
   checkout, entrance) for behavioral analysis.
-- **AI-Powered Analysis:** Optional LLM/VLM integration via MCP server for automated event
-  summarization and scene analysis.
 
 ### Key Benefits
 
@@ -45,7 +43,7 @@ processing stays local.
 - **Real-Time Alerting:** Sub-second alert pipeline from camera detection to security
   notification via WebSocket, MQTT, and webhook strategies.
 - **Scalable Architecture:** Clean Architecture with microservices enables independent
-  scaling of backend, UI, alert service, and MCP server.
+  scaling of backend, UI, and alert service.
 - **Flexible Deployment:** Docker Compose deployment with support for both local and
   registry-based image management.
 - **SceneScape Integration:** Leverages Intel® SceneScape for spatial scene understanding,
@@ -162,10 +160,6 @@ User uploads image → OpenVINO → Detection FAISS Search → Group by track �
   Dedicated microservice for alert fan-out — dispatches POI match alerts via logging,
   WebSocket (to UI), and MQTT channels. Runs on port `8001`.
 
-- **MCP Server (FastMCP)**:
-  Model Context Protocol server exposing AI tools (LLM, VLM, OpenVINO, Docker, Redis,
-  POI data) for Claude Desktop and other MCP clients. Runs on port `9000`.
-
 - **Intel® SceneScape + DLStreamer**:
   Upstream inference pipeline providing person detection, face detection, and face
   re-identification via MQTT. DLStreamer runs the OpenVINO models; SceneScape provides
@@ -179,9 +173,7 @@ User uploads image → OpenVINO → Detection FAISS Search → Group by track �
   person appeared across all cameras, with region dwell times and thumbnails.
 - **Feature 3**: Multi-strategy alert delivery — WebSocket push to UI, MQTT publish, and
   webhook POST, with configurable dedup and suppression.
-- **Feature 4**: MCP server with LLM/VLM tools for AI-powered event summarization and
-  surveillance scene analysis.
-- **Feature 5**: Region entry/exit tracking with dwell time computation via SceneScape
+- **Feature 4**: Region entry/exit tracking with dwell time computation via SceneScape
   regulated scene events.
 
 ## Learn More
