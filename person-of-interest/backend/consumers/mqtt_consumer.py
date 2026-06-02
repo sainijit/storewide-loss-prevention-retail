@@ -390,13 +390,15 @@ class EventConsumer:
             if not frame_b64:
                 log.debug("No frame available for camera=%s at ts=%s", camera_id, timestamp)
 
-            # Crop to face bbox so stored frames always show the detected person,
-            # not the full camera view (which may contain other people).
+            # Crop to person body bbox (head-to-toe) so stored frames show the
+            # full person, matching what online alerts display.  Falls back to
+            # face bbox, then full camera frame.
             frame_b64_cropped: Optional[str] = None
-            if frame_b64 and best_face_bbox:
+            _crop_box = person_bbox or best_face_bbox
+            if frame_b64 and _crop_box:
                 _frame_np = base64_to_frame(frame_b64)
                 if _frame_np is not None:
-                    _cropped = crop_bbox(_frame_np, best_face_bbox)
+                    _cropped = crop_bbox(_frame_np, _crop_box)
                     if _cropped is not None and _cropped.size > 0:
                         frame_b64_cropped = frame_to_base64_jpeg(_cropped)
             if frame_b64_cropped is None:
