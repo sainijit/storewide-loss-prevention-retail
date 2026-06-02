@@ -71,7 +71,7 @@ demo:
 
 .PHONY: lp-down
 lp-down:
-	-$(COMPOSE_POI) down
+	-$(COMPOSE_POI) --profile benchmark down
 	-$(COMPOSE_SCENESCAPE) down
 	@rm -f application.log
 	@rm -f $(SCENESCAPE_DIR)/dlstreamer-pipeline-server/person-of-interest-*-[0-9]*-pipeline-config.json 2>/dev/null || true
@@ -657,7 +657,7 @@ up:
 
 .PHONY: down
 down:
-	-$(COMPOSE_POI) down
+	-$(COMPOSE_POI) --profile benchmark down
 	-$(COMPOSE_SCENESCAPE) down
 
 .PHONY: logs
