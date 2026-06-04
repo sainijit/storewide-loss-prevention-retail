@@ -189,11 +189,15 @@ build-benchmark: ## Build benchmark metrics-collector Docker image
 .PHONY: _start-metrics-collector
 _start-metrics-collector:
 	@echo "$(BLUE)=== Starting metrics-collector ===$(NC)"
+	@if ! docker image inspect $(REGISTRY_BENCHMARK) >/dev/null 2>&1; then \
+		echo "$(YELLOW)  metrics-collector image not found locally — attempting pull...$(NC)"; \
+		docker pull $(REGISTRY_BENCHMARK) 2>/dev/null || true; \
+	fi
 	@if docker image inspect $(REGISTRY_BENCHMARK) >/dev/null 2>&1; then \
 		$(COMPOSE_POI) --profile benchmark up -d metrics-collector && \
 		echo "$(GREEN)  metrics-collector started$(NC)"; \
 	else \
-		echo "$(YELLOW)  metrics-collector image not found — skipping (run 'make build-benchmark' first)$(NC)"; \
+		echo "$(YELLOW)  metrics-collector image not available — skipping (run 'make build-benchmark' to build locally)$(NC)"; \
 	fi
 
 # Stop metrics-collector
@@ -528,7 +532,7 @@ help:
 # ========================================================================
 
 COMPOSE_POI := docker compose --env-file docker/.env -f docker-compose.yml
-REGISTRY ?= false
+REGISTRY ?= true
 
 BLUE := \033[1;34m
 GREEN := \033[1;32m
