@@ -145,6 +145,11 @@ BENCHMARK_STABILISE_DURATION ?= 60
 BENCHMARK_DURATION ?= 120
 BENCHMARK_MAX_ITERATIONS ?= 50
 BENCHMARK_MIN_THROUGHPUT_RATIO ?= 0.5
+# Max total seconds to wait for an alert from a new camera per iteration.
+# The benchmark retries in INIT_DURATION windows until an alert is received
+# or this limit is hit.  Default covers ~3 video cycles (~55s each).
+# Increase for CPU mode: MAX_ALERT_WAIT=300 make benchmark-stream-density DEVICE=all-cpu.env
+BENCHMARK_MAX_ALERT_WAIT ?= 180
 
 # Short-name aliases
 ifdef TARGET_LATENCY_MS
@@ -223,6 +228,7 @@ benchmark-stream-density: _benchmark-fresh-start _benchmark-enroll _start-metric
 	@$(MAKE) --no-print-directory poi-benchmark-stream-density BENCHMARK_RESOURCE_CONFIG=$(BENCHMARK_RESOURCE_CONFIG); ret=$$?; \
 		$(MAKE) --no-print-directory _stop-metrics-collector; \
 		$(MAKE) --no-print-directory _benchmark-cleanup; \
+		$(MAKE) --no-print-directory down; \
 		exit $$ret
 
 # Internal: tear down stale services for a clean benchmark
@@ -394,6 +400,7 @@ poi-benchmark-stream-density: ## Iteratively increase scenes until POI latency t
 		--init_duration $(BENCHMARK_INIT_DURATION) \
 		--stabilise_duration $(BENCHMARK_STABILISE_DURATION) \
 		--max_iterations $(BENCHMARK_MAX_ITERATIONS) \
+		--max_alert_wait $(BENCHMARK_MAX_ALERT_WAIT) \
 		--resource_config $(BENCHMARK_RESOURCE_CONFIG) \
 		--results_dir $(CURDIR)/$(RESULTS_PATH)
 
