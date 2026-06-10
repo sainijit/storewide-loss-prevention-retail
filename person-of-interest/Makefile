@@ -217,43 +217,15 @@ _stop-metrics-collector:
 		$(COMPOSE_POI) --profile benchmark rm -f metrics-collector 2>/dev/null || true; \
 	fi
 
-# Check for python3-venv prerequisite and auto-install if missing
-.PHONY: _check-venv
-_check-venv:
-	@if ! python3 -c "import venv" 2>/dev/null; then \
-		echo "$(YELLOW)python3-venv not found. Attempting to install...$(NC)"; \
-		if command -v apt-get >/dev/null 2>&1; then \
-			echo "  Running: sudo apt-get install -y python3-venv"; \
-			sudo apt-get update -qq && sudo apt-get install -y python3-venv || { \
-				echo "$(RED)Failed to install python3-venv$(NC)"; \
-				echo "Please install manually: sudo apt install python3-venv"; \
-				exit 1; \
-			}; \
-			echo "$(GREEN)python3-venv installed successfully$(NC)"; \
-		elif command -v yum >/dev/null 2>&1; then \
-			echo "  Running: sudo yum install -y python3-venv"; \
-			sudo yum install -y python3-venv || { \
-				echo "$(RED)Failed to install python3-venv$(NC)"; \
-				echo "Please install manually: sudo yum install python3-venv"; \
-				exit 1; \
-			}; \
-			echo "$(GREEN)python3-venv installed successfully$(NC)"; \
-		else \
-			echo "$(RED)ERROR: python3-venv is not installed and could not auto-install$(NC)"; \
-			echo "Please install the python3-venv package for your system manually."; \
-			exit 1; \
-		fi; \
-	fi
-
 .PHONY: benchmark
-benchmark: _check-venv _benchmark-fresh-start _benchmark-enroll _start-metrics-collector ## Single-scene POI benchmark with auto-enroll
+benchmark: _benchmark-fresh-start _benchmark-enroll _start-metrics-collector ## Single-scene POI benchmark with auto-enroll
 	@$(MAKE) --no-print-directory poi-benchmark BENCHMARK_RESOURCE_CONFIG=$(BENCHMARK_RESOURCE_CONFIG); ret=$$?; \
 		$(MAKE) --no-print-directory _stop-metrics-collector; \
 		$(MAKE) --no-print-directory _benchmark-cleanup; \
 		exit $$ret
 
 .PHONY: benchmark-stream-density
-benchmark-stream-density: _check-venv _benchmark-fresh-start _benchmark-enroll _start-metrics-collector ## Stream density with auto-enroll
+benchmark-stream-density: _benchmark-fresh-start _benchmark-enroll _start-metrics-collector ## Stream density with auto-enroll
 	@$(MAKE) --no-print-directory poi-benchmark-stream-density BENCHMARK_RESOURCE_CONFIG=$(BENCHMARK_RESOURCE_CONFIG); ret=$$?; \
 		$(MAKE) --no-print-directory _stop-metrics-collector; \
 		$(MAKE) --no-print-directory _benchmark-cleanup; \
@@ -387,10 +359,12 @@ poi-benchmark: ## Run a single-scene POI benchmark (detection-to-alert latency)
 		echo "  Fixed ownership of $(RESULTS_PATH)"; \
 	fi
 	$(BENCHMARK_VENV) && \
-	python3 $(POI_STREAM_DENSITY) run $(CURDIR) \
+	python3 $(POI_STREAM_DENSITY)  \
 		--single_run \
 		--scenes 1 \
 		--benchmark_duration $(BENCHMARK_DURATION) \
+		--poi_scripts_dir $(CURDIR)/benchmark \
+		--app_dir $(CURDIR) \
 		--target_latency_ms $(BENCHMARK_TARGET_LATENCY_MS) \
 		--latency_metric $(BENCHMARK_LATENCY_METRIC) \
 		--results_dir $(CURDIR)/$(RESULTS_PATH) \
@@ -417,14 +391,18 @@ poi-benchmark-stream-density: ## Iteratively increase scenes until POI latency t
 		echo "  Fixed ownership of $(RESULTS_PATH)"; \
 	fi
 	$(BENCHMARK_VENV) && \
-	python3 $(POI_STREAM_DENSITY) run $(CURDIR) \
-			--single_run \
-			--scenes 1 \
-			--benchmark_duration $(BENCHMARK_DURATION) \
-			--target_latency_ms $(BENCHMARK_TARGET_LATENCY_MS) \
-			--latency_metric $(BENCHMARK_LATENCY_METRIC) \
-			--results_dir $(CURDIR)/$(RESULTS_PATH) \
-			--resource_config $(BENCHMARK_RESOURCE_CONFIG)
+	python3 $(POI_STREAM_DENSITY) \
+		--poi_scripts_dir $(CURDIR)/benchmark \
+		--app_dir $(CURDIR) \
+		--target_latency_ms $(BENCHMARK_TARGET_LATENCY_MS) \
+		--latency_metric $(BENCHMARK_LATENCY_METRIC) \
+		--scene_increment $(BENCHMARK_SCENE_INCREMENT) \
+		--init_duration $(BENCHMARK_INIT_DURATION) \
+		--stabilise_duration $(BENCHMARK_STABILISE_DURATION) \
+		--max_iterations $(BENCHMARK_MAX_ITERATIONS) \
+		--max_alert_wait $(BENCHMARK_MAX_ALERT_WAIT) \
+		--results_dir $(CURDIR)/$(RESULTS_PATH) \
+		--resource_config $(BENCHMARK_RESOURCE_CONFIG)
 
 
 .PHONY: poi-stream-density
@@ -758,7 +736,8 @@ clean-data: clean-redis clean-faiss ## Flush Redis + remove FAISS (full data res
 
 .PHONY: update-submodules
 update-submodules:
-	@echo "$(BLUE)Updating submodules from specified branches...$(NC)"
-	cd .. && git submodule update --init --recursive --remote
-	@echo "$(GREEN)Submodules updated successfully.$(NC)"
+	@echo "$(BLUE)Cloning performance tool repositories$(NC)"
+	cd .. && git submodule deinit -f .
+	cd .. && git submodule update --init --remote --recursive
+	@echo "$(GREEN)Submodules updated (if any present).$(NC)"
 
