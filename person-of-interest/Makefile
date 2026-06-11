@@ -51,7 +51,8 @@ init:
 		exit 1; \
 	fi
 	@echo "  HOST_IP=$(HOST_IP) (used for WebRTC ICE candidates)"
-	@$(MAKE) -C $(SCENESCAPE_DIR) APP_DIR=$(CURDIR) RESOURCE_CONFIG=$(RESOURCE_CONFIG) init
+	@$(MAKE) -C $(SCENESCAPE_DIR) APP_DIR=$(CURDIR) RESOURCE_CONFIG=$(RESOURCE_CONFIG) init download-models init-sample-data init-volumes
+	@cp -f .env.example .env
 	@# Pre-create bind-mounted directories as the host user so poi-backend
 	@# (which runs as HOST_UID:HOST_GID) can write uploads and results.
 	@mkdir -p data/uploads data/faiss results
@@ -359,7 +360,7 @@ poi-benchmark: ## Run a single-scene POI benchmark (detection-to-alert latency)
 		echo "  Fixed ownership of $(RESULTS_PATH)"; \
 	fi
 	$(BENCHMARK_VENV) && \
-	python3 $(POI_STREAM_DENSITY) \
+	python3 $(POI_STREAM_DENSITY)  \
 		--single_run \
 		--scenes 1 \
 		--benchmark_duration $(BENCHMARK_DURATION) \
@@ -736,7 +737,8 @@ clean-data: clean-redis clean-faiss ## Flush Redis + remove FAISS (full data res
 
 .PHONY: update-submodules
 update-submodules:
-	@echo "$(BLUE)Updating submodules from specified branches...$(NC)"
-	cd .. && git submodule update --init --recursive --remote
-	@echo "$(GREEN)Submodules updated successfully.$(NC)"
+	@echo "$(BLUE)Cloning performance tool repositories$(NC)"
+	cd .. && git submodule deinit -f .
+	cd .. && git submodule update --init --remote --recursive
+	@echo "$(GREEN)Submodules updated (if any present).$(NC)"
 
