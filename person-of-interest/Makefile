@@ -52,6 +52,7 @@ init:
 	fi
 	@echo "  HOST_IP=$(HOST_IP) (used for WebRTC ICE candidates)"
 	@$(MAKE) -C $(SCENESCAPE_DIR) APP_DIR=$(CURDIR) RESOURCE_CONFIG=$(RESOURCE_CONFIG) init download-models init-sample-data init-volumes
+	@cp -f .env.example .env
 	@# Pre-create bind-mounted directories as the host user so poi-backend
 	@# (which runs as HOST_UID:HOST_GID) can write uploads and results.
 	@mkdir -p data/uploads data/faiss results
