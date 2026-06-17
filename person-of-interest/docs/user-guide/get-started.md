@@ -235,16 +235,10 @@ make demo
 `make up` performs the following steps automatically:
 
 1. Detects and cleans stale Docker networks (if present).
-2. Removes any stale SceneScape controller container missing the `controller.auth` secret
-   (can occur after partial earlier runs — see [Troubleshooting](./troubleshooting.md#2-scenescape-controller-crash-loop-valueerror-invalid-userpassword)).
-3. Starts SceneScape services (manager, controller, broker, DL Streamer, etc.).
-4. Polls SceneScape web health (up to 150 seconds).
-5. Resolves the SceneScape scene UID for the POI backend.
-6. Starts POI services (backend, UI, Redis, alert service).
-
-> **Note:** If you see no events reaching the POI backend after startup, check
-> `docker logs storewide-lp-scene-1` for a `ValueError: Invalid user/password`
-> crash loop. Run `make down && make up` to fully recover.
+2. Starts SceneScape services (manager, controller, broker, DL Streamer, etc.).
+3. Polls SceneScape web health (up to 150 seconds).
+4. Resolves the SceneScape scene UID for the POI backend.
+5. Starts POI services (backend, UI, Redis, alert service).
 
 This launches the following containers:
 

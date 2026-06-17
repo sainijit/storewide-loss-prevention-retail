@@ -614,7 +614,7 @@ up:
 	@echo "$(BLUE)=== Starting SceneScape services ===$(NC)"
 	@# CONTROLLER_AUTH must be in the process environment (not just --env-file) for the
 	@# environment:-source Docker secret to be injected at container creation time.
-	-CONTROLLER_AUTH="$$(grep '^CONTROLLER_AUTH=' docker/.env | cut -d= -f2-)" $(COMPOSE_SCENESCAPE) up -d
+	CONTROLLER_AUTH="$$(grep '^CONTROLLER_AUTH=' docker/.env | cut -d= -f2-)" $(COMPOSE_SCENESCAPE) up -d
 	@echo "  Waiting for SceneScape web health check..."; \
 	attempts=0; \
 	while [ $$attempts -lt 15 ]; do \
